@@ -376,6 +376,106 @@
              (goto-char (+ end 1))
              (insert "\""))))))
 
+(defun awesome-pair-splice-sexp (&optional argument)
+  (interactive "P")
+  (if (awesome-pair-in-string-p)
+      (awesome-pair-splice-string argument)
+    (save-excursion
+      (awesome-pair-kill-surrounding-sexps-for-splice argument)
+      (backward-up-list)
+      (save-excursion
+        (forward-sexp)
+        (backward-delete-char 1))
+      (delete-char 1)
+      (ignore-errors
+        (backward-up-list)
+        (indent-sexp)))))
+
+(defun awesome-pair-splice-string (argument)
+  (let ((original-point (point))
+        (start+end (awesome-pair-string-start+end-points)))
+    (let ((start (car start+end))
+          (end (cdr start+end)))
+      (let* ((escaped-string
+              (cond ((not (consp argument))
+                     (buffer-substring (1+ start) end))
+                    ((= 4 (car argument))
+                     (buffer-substring original-point end))
+                    (t
+                     (buffer-substring (1+ start) original-point))))
+             (unescaped-string
+              (awesome-pair-unescape-string escaped-string)))
+        (if (not unescaped-string)
+            (error "Unspliceable string.")
+          (save-excursion
+            (goto-char start)
+            (delete-region start (1+ end))
+            (insert unescaped-string))
+          (if (not (and (consp argument)
+                        (= 4 (car argument))))
+              (goto-char (- original-point 1))))))))
+
+(defun awesome-pair-point-at-sexp-start ()
+  (save-excursion
+    (forward-sexp)
+    (backward-sexp)
+    (point)))
+
+(defun awesome-pair-point-at-sexp-end ()
+  (save-excursion
+    (backward-sexp)
+    (forward-sexp)
+    (point)))
+
+(defun awesome-pair-point-at-sexp-boundary (n)
+  (cond ((< n 0) (awesome-pair-point-at-sexp-start))
+        ((= n 0) (point))
+        ((> n 0) (awesome-pair-point-at-sexp-end))))
+
+(defun awesome-pair-kill-surrounding-sexps-for-splice (argument)
+  (cond ((or (awesome-pair-in-string-p)
+             (awesome-pair-in-comment-p))
+         (error "Invalid context for splicing S-expressions."))
+        ((or (not argument) (eq argument 0)) nil)
+        ((or (numberp argument) (eq argument '-))
+         (let* ((argument (if (eq argument '-) -1 argument))
+                (saved (awesome-pair-point-at-sexp-boundary (- argument))))
+           (goto-char saved)
+           (ignore-errors (backward-sexp argument))
+           (awesome-pair-hack-kill-region saved (point))))
+        ((consp argument)
+         (let ((v (car argument)))
+           (if (= v 4)
+               (let ((end (point)))
+                 (ignore-errors
+                   (while (not (bobp))
+                     (backward-sexp)))
+                 (awesome-pair-hack-kill-region (point) end))
+             (let ((beginning (point)))
+               (ignore-errors
+                 (while (not (eobp))
+                   (forward-sexp)))
+               (awesome-pair-hack-kill-region beginning (point))))))
+        (t (error "Bizarre prefix argument `%s'." argument))))
+
+(defun awesome-pair-unescape-string (string)
+  (with-temp-buffer
+    (insert string)
+    (goto-char (point-min))
+    (while (and (not (eobp))
+                (search-forward "\\" nil t))
+      (delete-char -1)
+      (forward-char))
+    (condition-case condition
+        (progn (check-parens) (buffer-string))
+      (error nil))))
+
+(defun awesome-pair-hack-kill-region (start end)
+  (interactive "r")
+  (let ((this-command nil)
+        (last-command nil))
+    (kill-region start end)))
+
 (provide 'awesome-pair)
 
 ;;; awesome-pair.el ends here
