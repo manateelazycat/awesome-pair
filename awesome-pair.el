@@ -699,6 +699,18 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
 \\<awesome-pair-mode-map>"
   )
 
+(defun awesome-pair-match-paren (arg)
+  "Go to the matching parenthesis if on parenthesis, otherwise insert %."
+  (interactive "p")
+  (cond ((or (awesome-pair-in-comment-p)
+             (awesome-pair-in-string-p))
+         (self-insert-command (or arg 1)))
+        ((looking-at "\\s\(\\|\\s\{\\|\\s\[")
+         (forward-list))
+        ((looking-back "\\s\)\\|\\s\}\\|\\s\\]")
+         (backward-list))
+        (t (self-insert-command (or arg 1)))))
+
 (provide 'awesome-pair)
 
 ;;; awesome-pair.el ends here
