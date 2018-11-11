@@ -243,7 +243,8 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
              (insert "(")
              (goto-char (+ end 1))
              (insert ")"))
-           ))))
+           )))
+  (forward-char))
 
 (defun awesome-pair-wrap-bracket ()
   (interactive)
@@ -270,7 +271,8 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
              (insert "[")
              (goto-char (+ end 1))
              (insert "]"))
-           ))))
+           )))
+  (forward-char))
 
 (defun awesome-pair-wrap-curly ()
   (interactive)
@@ -297,7 +299,8 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
              (insert "{")
              (goto-char (+ end 1))
              (insert "}"))
-           ))))
+           )))
+  (forward-char))
 
 (defun awesome-pair-wrap-double-quote ()
   (interactive)
@@ -318,7 +321,8 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
              (goto-char start)
              (insert "\"")
              (goto-char (+ end 1))
-             (insert "\""))))))
+             (insert "\"")))))
+  (forward-char))
 
 (defun awesome-pair-unwrap (&optional argument)
   (interactive "P")
