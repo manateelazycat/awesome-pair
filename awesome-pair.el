@@ -376,7 +376,7 @@
              (goto-char (+ end 1))
              (insert "\""))))))
 
-(defun awesome-pair-splice-sexp (&optional argument)
+(defun awesome-pair-unwrap (&optional argument)
   (interactive "P")
   (if (awesome-pair-in-string-p)
       (awesome-pair-splice-string argument)
