@@ -48,24 +48,24 @@ You can add awesome-pair.el to the programming language mode like below:
 Then binding below awesome-pair.el commands with below keystrokes:
 
 ```Elisp
-(global-set-key (kbd "(") 'awesome-pair-open-round)        
-(global-set-key (kbd "[") 'awesome-pair-open-bracket)      
-(global-set-key (kbd "{") 'awesome-pair-open-curly)        
-(global-set-key (kbd ")") 'awesome-pair-close-round)       
-(global-set-key (kbd "]") 'awesome-pair-close-bracket)     
-(global-set-key (kbd "}") 'awesome-pair-close-curly)       
+(global-set-key (kbd "(") 'awesome-pair-open-round)
+(global-set-key (kbd "[") 'awesome-pair-open-bracket)
+(global-set-key (kbd "{") 'awesome-pair-open-curly)
+(global-set-key (kbd ")") 'awesome-pair-close-round)
+(global-set-key (kbd "]") 'awesome-pair-close-bracket)
+(global-set-key (kbd "}") 'awesome-pair-close-curly)
 
-(global-set-key (kbd "%") 'awesome-pair-match-paren)       
-(global-set-key (kbd "\"") 'awesome-pair-double-quote)     
+(global-set-key (kbd "%") 'awesome-pair-match-paren)
+(global-set-key (kbd "\"") 'awesome-pair-double-quote)
 
 (global-set-key (kbd "M-o") 'awesome-pair-backward-delete) 
-(global-set-key (kbd "C-k") 'awesome-pair-kill)            
+(global-set-key (kbd "C-k") 'awesome-pair-kill)
 
 (global-set-key (kbd "M-\"") 'awesome-pair-wrap-double-quote) 
-(global-set-key (kbd "M-[") 'awesome-pair-wrap-bracket)       
-(global-set-key (kbd "M-{") 'awesome-pair-wrap-curly)         
-(global-set-key (kbd "M-(") 'awesome-pair-wrap-round)         
-(global-set-key (kbd "M-)") 'awesome-pair-unwrap)		  
+(global-set-key (kbd "M-[") 'awesome-pair-wrap-bracket)
+(global-set-key (kbd "M-{") 'awesome-pair-wrap-curly)
+(global-set-key (kbd "M-(") 'awesome-pair-wrap-round)
+(global-set-key (kbd "M-)") 'awesome-pair-unwrap)
 
 (global-set-key (kbd "M-:") 'awesome-pair-jump-out-pair-and-newline) 
 ```
