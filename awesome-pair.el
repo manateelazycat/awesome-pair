@@ -502,7 +502,6 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
                (awesome-pair-skip-whitespace t (point-at-eol))
                (or (eq (char-after) ?\; )
                    (eolp))))
-                                        ;** Be careful about trailing backslashes.
          (kill-line))
         (t (awesome-pair-kill-sexps-on-line))))
 
@@ -511,26 +510,24 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
                       (eolp))
       (kill-line)
     (save-excursion
-      ;; Be careful not to split an escape sequence.
       (if (awesome-pair-in-string-escape-p)
           (backward-char))
       (let ((beginning (point)))
         (while (not (or (eolp)
                         (eq (char-after) ?\" )))
           (forward-char)
-          ;; Skip past escaped characters.
           (if (eq (char-before) ?\\ )
               (forward-char)))
         (kill-region beginning (point))))))
 
 (defun awesome-pair-skip-whitespace (trailing-p &optional limit)
   (funcall (if trailing-p 'skip-chars-forward 'skip-chars-backward)
-           " \t\n"   ; This should skip using the syntax table, but LF
+           " \t\n"   
            limit))
 
 (defun awesome-pair-kill-sexps-on-line ()
-  (if (awesome-pair-in-char-p)          ; Move past the \ and prefix.
-      (backward-char 2))                ; (# in Scheme/CL, ? in elisp)
+  (if (awesome-pair-in-char-p)          
+      (backward-char 2))                
   (let ((beginning (point))
         (eol (point-at-eol)))
     (let ((end-of-list-p (awesome-pair-forward-sexps-to-kill beginning eol)))
@@ -570,27 +567,23 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
 
 (defun awesome-pair-kill-sexps-on-whole-line (beginning)
   (kill-region beginning
-               (or (save-excursion    ; Delete trailing indentation...
+               (or (save-excursion    
                      (awesome-pair-skip-whitespace t)
                      (and (not (eq (char-after) ?\; ))
                           (point)))
-                   ;; ...or just use the point past the newline, if
-                   ;; we encounter a comment.
                    (point-at-eol)))
   (cond ((save-excursion (awesome-pair-skip-whitespace nil (point-at-bol))
                          (bolp))
-         ;; Nothing but indentation before the point, so indent it.
          (lisp-indent-line))
-        ((eobp) nil)      ; Protect the CHAR-SYNTAX below against NIL.
-        ;; Insert a space to avoid invalid joining if necessary.
+        ((eobp) nil)      
         ((let ((syn-before (char-syntax (char-before)))
                (syn-after  (char-syntax (char-after))))
-           (or (and (eq syn-before ?\) )          ; Separate opposing
-                    (eq syn-after  ?\( ))         ;   parentheses,
-               (and (eq syn-before ?\" )          ; string delimiter
-                    (eq syn-after  ?\" ))         ;   pairs,
-               (and (memq syn-before '(?_ ?w))    ; or word or symbol
-                    (memq syn-after  '(?_ ?w))))) ;   constituents.
+           (or (and (eq syn-before ?\) )          
+                    (eq syn-after  ?\( ))         
+               (and (eq syn-before ?\" )          
+                    (eq syn-after  ?\" ))         
+               (and (memq syn-before '(?_ ?w))    
+                    (memq syn-after  '(?_ ?w))))) 
          (insert " "))))
 
 (defun awesome-pair-common-mode-kill ()
