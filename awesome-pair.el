@@ -345,8 +345,39 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
          (goto-char (1+ (cdr (awesome-pair-string-start+end-points))))
          (newline-and-indent))
         (t
-         (up-list)
-         (newline-and-indent))))
+         ;; Just do when have `up-list' in next step.
+         (if (ignore-errors
+               (save-excursion
+                 (up-list))
+               t)
+             (let (up-list-point)
+               (if (awesome-pair-is-blank-line-p)
+                   ;; Clean current line first if current line is blank line.
+                   (awesome-pair-kill-current-line)
+                 ;; Move out of current parentheses and newline.
+                 (up-list)
+                 (setq up-list-point (point))
+                 (newline-and-indent)
+                 ;; Try to clean unnecessary whitespace before close parenthesis.
+                 (save-excursion
+                   (goto-char up-list-point)
+                   (backward-char)
+                   (when (awesome-pair-only-whitespaces-before-cursor-p)
+                     (awesome-pair-delete-whitespace-before-cursor)))))
+           ;; Try to clean blank line if no pair can jump out.
+           (if (awesome-pair-is-blank-line-p)
+               (awesome-pair-kill-current-line))))))
+
+(defun awesome-pair-delete-whitespace-before-cursor ()
+  (kill-region (save-excursion
+                 (search-backward-regexp "[^ \t\n]" nil t)
+                 (forward-char)
+                 (point))
+               (point)))
+
+(defun awesome-pair-kill-current-line ()
+  (kill-region (beginning-of-thing 'line) (end-of-thing 'line))
+  (back-to-indentation))
 
 (defun awesome-pair-missing-close ()
   (let (open)
@@ -574,7 +605,7 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
          (insert " "))))
 
 (defun awesome-pair-common-mode-kill ()
-  (if (awesome-pair-blank-line-p)
+  (if (awesome-pair-is-blank-line-p)
       (awesome-pair-kill-blank-line-and-reindent)
     (awesome-pair-kill-internal)))
 
@@ -586,7 +617,7 @@ If point in string area, kill string content like `awesome-pair-kill' do.
 If point in tag area, kill nearest tag attribute around point.
 If point in <% ... %>, kill rails code.
 Otherwise, do `awesome-pair-kill'."
-  (if (awesome-pair-blank-line-p)
+  (if (awesome-pair-is-blank-line-p)
       (awesome-pair-kill-blank-line-and-reindent)
     (cond ((awesome-pair-in-string-p)
            (awesome-pair-kill-internal))
@@ -625,7 +656,7 @@ If current line is blank line, re-indent line after kill whole line.
 
 If current line is not blank, do `awesome-pair-kill' first, re-indent line if rest line start with ruby keywords.
 "
-  (if (awesome-pair-blank-line-p)
+  (if (awesome-pair-is-blank-line-p)
       (awesome-pair-kill-blank-line-and-reindent)
     ;; Do `awesome-pair-kill' first.
     (awesome-pair-kill-internal)
@@ -713,10 +744,18 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
     (and (eq (char-before argument) ?\\ )
          (not (eq (char-before (1- argument)) ?\\ )))))
 
-(defun awesome-pair-blank-line-p ()
+(defun awesome-pair-is-blank-line-p ()
   (save-excursion
     (beginning-of-line)
     (looking-at "[[:space:]]*$")))
+
+(defun awesome-pair-only-whitespaces-before-cursor-p ()
+  (string-match "[[:space:]]"
+                (buffer-substring
+                 (save-excursion
+                   (beginning-of-line)
+                   (point))
+                 (point))))
 
 (provide 'awesome-pair)
 
