@@ -522,12 +522,12 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
 
 (defun awesome-pair-skip-whitespace (trailing-p &optional limit)
   (funcall (if trailing-p 'skip-chars-forward 'skip-chars-backward)
-           " \t\n"   
+           " \t\n"
            limit))
 
 (defun awesome-pair-kill-sexps-on-line ()
-  (if (awesome-pair-in-char-p)          
-      (backward-char 2))                
+  (if (awesome-pair-in-char-p)
+      (backward-char 2))
   (let ((beginning (point))
         (eol (point-at-eol)))
     (let ((end-of-list-p (awesome-pair-forward-sexps-to-kill beginning eol)))
@@ -567,7 +567,7 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
 
 (defun awesome-pair-kill-sexps-on-whole-line (beginning)
   (kill-region beginning
-               (or (save-excursion    
+               (or (save-excursion
                      (awesome-pair-skip-whitespace t)
                      (and (not (eq (char-after) ?\; ))
                           (point)))
@@ -575,15 +575,15 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
   (cond ((save-excursion (awesome-pair-skip-whitespace nil (point-at-bol))
                          (bolp))
          (lisp-indent-line))
-        ((eobp) nil)      
+        ((eobp) nil)
         ((let ((syn-before (char-syntax (char-before)))
                (syn-after  (char-syntax (char-after))))
-           (or (and (eq syn-before ?\) )          
-                    (eq syn-after  ?\( ))         
-               (and (eq syn-before ?\" )          
-                    (eq syn-after  ?\" ))         
-               (and (memq syn-before '(?_ ?w))    
-                    (memq syn-after  '(?_ ?w))))) 
+           (or (and (eq syn-before ?\) )
+                    (eq syn-after  ?\( ))
+               (and (eq syn-before ?\" )
+                    (eq syn-after  ?\" ))
+               (and (memq syn-before '(?_ ?w))
+                    (memq syn-after  '(?_ ?w)))))
          (insert " "))))
 
 (defun awesome-pair-common-mode-kill ()
@@ -592,44 +592,33 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
     (awesome-pair-kill-internal)))
 
 (defun awesome-pair-web-mode-kill ()
-  "It's a smarter kill function for `web-mode'.
-
-If current line is blank line, re-indent line after kill whole line.
-If point in string area, kill string content like `awesome-pair-kill' do.
-If point in tag area, kill nearest tag attribute around point.
-If point in <% ... %>, kill rails code.
-Otherwise, do `awesome-pair-kill'."
+  "It's a smarter kill function for `web-mode'."
   (if (awesome-pair-is-blank-line-p)
       (awesome-pair-kill-blank-line-and-reindent)
-    (cond ((awesome-pair-in-string-p)
-           (awesome-pair-kill-internal))
-          (t
-           (let (char-count-before-kill
-                 char-count-after-kill
-                 kill-start-point)
-             ;; Try do `web-mode-attribute-kill'.
-             (setq char-count-before-kill (- (point-max) (point-min)))
-             (web-mode-attribute-kill)
-             (setq char-count-after-kill (- (point-max) (point-min)))
-             ;; Try continue if nothing change after `web-mode-attribute-kill'.
-             (when (equal char-count-before-kill char-count-after-kill)
-               ;; Do `awesome-pair-kill' if point at front of <%.
-               (if (looking-at "\\(\\s-+<%\\|<%\\)")
-                   (awesome-pair-kill-internal)
-                 (setq kill-start-point (point))
-                 ;; Kill content in <% ... %> if found %> in rest line.
-                 (if (search-forward-regexp
-                      ".*\\(%>\\)"
-                      (save-excursion
-                        (end-of-line)
-                        (point))
-                      t)
-                     (progn
-                       (backward-char (length (substring-no-properties (match-string 1))))
-                       (kill-region kill-start-point (point)))
-                   ;; Do `awesome-pair-kill' last.
-                   (awesome-pair-kill-internal)))
-               ))))))
+    (cond
+     ;; Kill string if current pointer in string area.
+     ((awesome-pair-in-string-p)
+      (awesome-pair-kill-internal))
+     ;; Kill element if no attributes in tag.
+     ((looking-at ">?</")
+      (web-mode-element-kill 1))
+     ;; Kill whitespace in tag.
+     ((looking-at "\\s-+>")
+      (search-forward-regexp ">" nil t)
+      (backward-char)
+      (awesome-pair-delete-whitespace-before-cursor))
+     (t
+      (unless (awesome-pair-ignore-errors
+               ;; Kill with sexp block.
+               (let (kill-start kill-end)
+                 (save-excursion
+                   (web-mode-forward-sexp 1)
+                   (setq kill-end (point))
+                   (web-mode-backward-sexp 1)
+                   (setq kill-start (point)))
+                 (kill-region (min kill-start (point)) kill-end)))
+        ;; Kill block if sexp parse failed.
+        (web-mode-block-kill))))))
 
 (defun awesome-pair-ruby-mode-kill ()
   "It's a smarter kill function for `ruby-mode'.
