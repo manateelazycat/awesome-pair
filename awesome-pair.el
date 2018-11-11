@@ -274,6 +274,108 @@
            (backward-delete-char 1)
            (delete-char 1)))))
 
+(defun awesome-pair-wrap-round ()
+  (interactive)
+  (cond ((awesome-pair-in-string-p)
+         (let ((string-bound (awesome-pair-string-start+end-points)))
+           (save-excursion
+             (goto-char (car string-bound))
+             (insert "(")
+             (goto-char (+ (cdr string-bound) 2))
+             (insert ")"))))
+        ((awesome-pair-in-comment-p)
+         (save-excursion
+           (let ((start (beginning-of-thing 'symbol))
+                 (end (end-of-thing 'symbol)))
+             (goto-char start)
+             (insert "(")
+             (goto-char (+ end 1))
+             (insert ")"))))
+        (t
+         (save-excursion
+           (let ((start (beginning-of-thing 'sexp))
+                 (end (end-of-thing 'sexp)))
+             (goto-char start)
+             (insert "(")
+             (goto-char (+ end 1))
+             (insert ")"))
+           ))))
+
+(defun awesome-pair-wrap-bracket ()
+  (interactive)
+  (cond ((awesome-pair-in-string-p)
+         (let ((string-bound (awesome-pair-string-start+end-points)))
+           (save-excursion
+             (goto-char (car string-bound))
+             (insert "[")
+             (goto-char (+ (cdr string-bound) 2))
+             (insert "]"))))
+        ((awesome-pair-in-comment-p)
+         (save-excursion
+           (let ((start (beginning-of-thing 'symbol))
+                 (end (end-of-thing 'symbol)))
+             (goto-char start)
+             (insert "[")
+             (goto-char (+ end 1))
+             (insert "]"))))
+        (t
+         (save-excursion
+           (let ((start (beginning-of-thing 'sexp))
+                 (end (end-of-thing 'sexp)))
+             (goto-char start)
+             (insert "[")
+             (goto-char (+ end 1))
+             (insert "]"))
+           ))))
+
+(defun awesome-pair-wrap-curly ()
+  (interactive)
+  (cond ((awesome-pair-in-string-p)
+         (let ((string-bound (awesome-pair-string-start+end-points)))
+           (save-excursion
+             (goto-char (car string-bound))
+             (insert "{")
+             (goto-char (+ (cdr string-bound) 2))
+             (insert "}"))))
+        ((awesome-pair-in-comment-p)
+         (save-excursion
+           (let ((start (beginning-of-thing 'symbol))
+                 (end (end-of-thing 'symbol)))
+             (goto-char start)
+             (insert "{")
+             (goto-char (+ end 1))
+             (insert "}"))))
+        (t
+         (save-excursion
+           (let ((start (beginning-of-thing 'sexp))
+                 (end (end-of-thing 'sexp)))
+             (goto-char start)
+             (insert "{")
+             (goto-char (+ end 1))
+             (insert "}"))
+           ))))
+
+(defun awesome-pair-wrap-double-quote ()
+  (interactive)
+  (cond ((awesome-pair-in-string-p)
+         (goto-char (1+ (cdr (awesome-pair-string-start+end-points)))))
+        ((awesome-pair-in-comment-p)
+         (save-excursion
+           (let ((start (beginning-of-thing 'symbol))
+                 (end (end-of-thing 'symbol)))
+             (goto-char start)
+             (insert "\"")
+             (goto-char (+ end 1))
+             (insert "\""))))
+        (t
+         (save-excursion
+           (let ((start (beginning-of-thing 'sexp))
+                 (end (end-of-thing 'sexp)))
+             (goto-char start)
+             (insert "\"")
+             (goto-char (+ end 1))
+             (insert "\""))))))
+
 (provide 'awesome-pair)
 
 ;;; awesome-pair.el ends here
