@@ -346,10 +346,7 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
          (newline-and-indent))
         (t
          ;; Just do when have `up-list' in next step.
-         (if (ignore-errors
-               (save-excursion
-                 (up-list))
-               t)
+         (if (awesome-pair-ignore-errors (save-excursion (up-list)))
              (let (up-list-point)
                (if (awesome-pair-is-blank-line-p)
                    ;; Clean current line first if current line is blank line.
@@ -385,9 +382,7 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
       (save-excursion
         (backward-up-list)
         (setq open (char-after))
-        (if (ignore-errors
-              (forward-sexp)
-              t)
+        (if (awesome-pair-ignore-errors (forward-sexp))
             nil
           open)))))
 
@@ -396,9 +391,7 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
   (delete-char 1))
 
 (defun awesome-pair-backward-movein-or-delete-close-pair ()
-  (if (ignore-errors
-        (save-excursion (backward-sexp))
-        t)
+  (if (awesome-pair-ignore-errors (save-excursion (backward-sexp)))
       (backward-char)
     (backward-delete-char 1)))
 
@@ -557,18 +550,14 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
       (while t
         (if (and kill-whole-line (eobp)) (throw 'return nil))
         (save-excursion
-          (unless (ignore-errors
-                    (forward-sexp)
-                    t)
+          (unless (awesome-pair-ignore-errors (forward-sexp))
             (up-list)
             (setq end-of-list-p (eq (point-at-eol) eol))
             (throw 'return nil))
           (if (or (and (not firstp)
                        (not kill-whole-line)
                        (eobp))
-                  (not (ignore-errors
-                         (backward-sexp)
-                         t))
+                  (not (awesome-pair-ignore-errors (backward-sexp)))
                   (not (eq (point-at-eol) eol)))
               (throw 'return nil)))
         (forward-sexp)
@@ -756,6 +745,11 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
                    (beginning-of-line)
                    (point))
                  (point))))
+
+(defmacro awesome-pair-ignore-errors (body)
+  `(ignore-errors
+     ,body
+     t))
 
 (provide 'awesome-pair)
 
