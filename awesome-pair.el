@@ -115,8 +115,13 @@
              (awesome-pair-in-comment-p))
          (insert "{"))
         (t
-         (insert "{}")
-         (backward-char))
+         (cond ((derived-mode-p 'ruby-mode)
+                (insert "{  }")
+                (backward-char 2))
+               (t
+                (insert "{}")
+                (backward-char)))
+         )
         ))
 
 (defun awesome-pair-open-bracket ()
@@ -563,8 +568,6 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
                (and (memq syn-before '(?_ ?w))    ; or word or symbol
                     (memq syn-after  '(?_ ?w))))) ;   constituents.
          (insert " "))))
-
-
 
 (defun awesome-pair-common-mode-kill ()
   (if (awesome-pair-blank-line-p)
