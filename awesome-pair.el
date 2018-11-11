@@ -691,6 +691,14 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
   (kill-region (beginning-of-thing 'line) (end-of-thing 'line))
   (back-to-indentation))
 
+(defvar awesome-pair-mode-map (make-sparse-keymap)
+  "Keymap for the awesome-pair minor mode.")
+
+(define-minor-mode awesome-pair-mode
+  "Minor mode for auto parenthesis pairing with syntax table.
+\\<awesome-pair-mode-map>"
+  )
+
 (provide 'awesome-pair)
 
 ;;; awesome-pair.el ends here
