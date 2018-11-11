@@ -89,6 +89,16 @@
 
 ;;; Code:
 
+(defvar awesome-pair-mode-map (make-sparse-keymap)
+  "Keymap for the awesome-pair minor mode.")
+
+(define-minor-mode awesome-pair-mode
+  "Minor mode for auto parenthesis pairing with syntax table.
+\\<awesome-pair-mode-map>"
+  )
+
+;;;;;;;;;;;;;;;;; Interactive functions ;;;;;;;;;;;;;;;;;;;;;;
+
 (defun awesome-pair-open-round ()
   (interactive)
   (cond ((or (awesome-pair-in-string-p)
@@ -155,27 +165,6 @@
                (insert "]")
              )))))
 
-(defun awesome-pair-jump-out-pair-and-newline ()
-  (interactive)
-  (cond ((awesome-pair-in-string-p)
-         (goto-char (1+ (cdr (awesome-pair-string-start+end-points))))
-         (newline-and-indent))
-        (t
-         (up-list)
-         (newline-and-indent))))
-
-(defun awesome-pair-missing-close ()
-  (let (open)
-    (ignore-errors
-      (save-excursion
-        (backward-up-list)
-        (setq open (char-after))
-        (if (ignore-errors
-              (forward-sexp)
-              t)
-            nil
-          open)))))
-
 (defun awesome-pair-double-quote ()
   (interactive)
   (cond ((or (awesome-pair-in-string-p)
@@ -185,6 +174,18 @@
          (insert "\"\"")
          (backward-char))
         ))
+
+(defun awesome-pair-match-paren (arg)
+  "Go to the matching parenthesis if on parenthesis, otherwise insert %."
+  (interactive "p")
+  (cond ((or (awesome-pair-in-comment-p)
+             (awesome-pair-in-string-p))
+         (self-insert-command (or arg 1)))
+        ((looking-at "\\s\(\\|\\s\{\\|\\s\[")
+         (forward-list))
+        ((looking-back "\\s\)\\|\\s\}\\|\\s\\]")
+         (backward-list))
+        (t (self-insert-command (or arg 1)))))
 
 (defun awesome-pair-backward-delete ()
   (interactive)
@@ -199,80 +200,18 @@
         ((not (awesome-pair-after-open-pair-p))
          (backward-delete-char 1))))
 
-(defun awesome-pair-backward-delete-in-pair ()
-  (backward-delete-char 1)
-  (delete-char 1))
+(defun awesome-pair-kill ()
+  "It's annoying that we need re-indent line after we delete blank line with `awesome-pair-kill'.
+`paredt-kill+' fixed this problem.
 
-(defun awesome-pair-backward-movein-or-delete-close-pair ()
-  (if (ignore-errors
-        (save-excursion (backward-sexp))
-        t)
-      (backward-char)
-    (backward-delete-char 1)))
-
-(defun awesome-pair-after-open-pair-p ()
-  (let ((syn (char-syntax (char-before))))
-    (or (eq syn ?\()
-        (and (eq syn ?_)
-             (eq (char-before) ?\{)))
-    ))
-
-(defun awesome-pair-after-close-pair-p ()
-  (let ((syn (char-syntax (char-before))))
-    (or (eq syn ?\) )
-        (eq syn ?\" )
-        (and (eq syn ?_ )
-             (eq (char-before) ?\}))
-        )))
-
-(defun awesome-pair-in-empty-pair-p ()
-  (or (and (eq (char-syntax (char-before)) ?\()
-           (eq (char-after) (matching-paren (char-before))))
-      (and (eq (char-syntax (char-before)) ?_)
-           (eq (char-before) ?\{)
-           (eq (char-syntax (char-after)) ?_)
-           (eq (char-after) ?\})
-           )))
-
-(defun awesome-pair-in-string-p (&optional state)
-  (and (nth 3 (or state (awesome-pair-current-parse-state)))
-       t))
-
-(defun awesome-pair-in-comment-p (&optional state)
-  (and (nth 4 (or state (awesome-pair-current-parse-state)))
-       t))
-
-(defun awesome-pair-current-parse-state ()
-  (let ((point (point)))
-    (beginning-of-defun)
-    (parse-partial-sexp (point) point)))
-
-(defun awesome-pair-string-start+end-points (&optional state)
-  (save-excursion
-    (let ((start (nth 8 (or state (awesome-pair-current-parse-state)))))
-      (goto-char start)
-      (forward-sexp 1)
-      (cons start (1- (point))))))
-
-(defun awesome-pair-in-string-escape-p ()
-  (let ((oddp nil))
-    (save-excursion
-      (while (eq (char-before) ?\\ )
-        (setq oddp (not oddp))
-        (backward-char)))
-    oddp))
-
-(defun awesome-pair-backward-delete-in-string ()
-  (let ((start+end (awesome-pair-string-start+end-points)))
-    (cond ((not (eq (1- (point)) (car start+end)))
-           (if (awesome-pair-in-string-escape-p)
-               (delete-char 1))
-           (backward-delete-char 1)
-           (if (awesome-pair-in-string-escape-p)
-               (backward-delete-char 1)))
-          ((eq (point) (cdr start+end))
-           (backward-delete-char 1)
-           (delete-char 1)))))
+If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome-pair-kill' for smarter kill operation."
+  (interactive)
+  (cond ((eq major-mode 'web-mode)
+         (awesome-pair-web-mode-kill))
+        ((eq major-mode 'ruby-mode)
+         (awesome-pair-ruby-mode-kill))
+        (t
+         (awesome-pair-common-mode-kill))))
 
 (defun awesome-pair-wrap-round ()
   (interactive)
@@ -391,6 +330,102 @@
         (backward-up-list)
         (indent-sexp)))))
 
+(defun awesome-pair-jump-out-pair-and-newline ()
+  (interactive)
+  (cond ((awesome-pair-in-string-p)
+         (goto-char (1+ (cdr (awesome-pair-string-start+end-points))))
+         (newline-and-indent))
+        (t
+         (up-list)
+         (newline-and-indent))))
+
+(defun awesome-pair-missing-close ()
+  (let (open)
+    (ignore-errors
+      (save-excursion
+        (backward-up-list)
+        (setq open (char-after))
+        (if (ignore-errors
+              (forward-sexp)
+              t)
+            nil
+          open)))))
+
+(defun awesome-pair-backward-delete-in-pair ()
+  (backward-delete-char 1)
+  (delete-char 1))
+
+(defun awesome-pair-backward-movein-or-delete-close-pair ()
+  (if (ignore-errors
+        (save-excursion (backward-sexp))
+        t)
+      (backward-char)
+    (backward-delete-char 1)))
+
+(defun awesome-pair-after-open-pair-p ()
+  (let ((syn (char-syntax (char-before))))
+    (or (eq syn ?\()
+        (and (eq syn ?_)
+             (eq (char-before) ?\{)))
+    ))
+
+(defun awesome-pair-after-close-pair-p ()
+  (let ((syn (char-syntax (char-before))))
+    (or (eq syn ?\) )
+        (eq syn ?\" )
+        (and (eq syn ?_ )
+             (eq (char-before) ?\}))
+        )))
+
+(defun awesome-pair-in-empty-pair-p ()
+  (or (and (eq (char-syntax (char-before)) ?\()
+           (eq (char-after) (matching-paren (char-before))))
+      (and (eq (char-syntax (char-before)) ?_)
+           (eq (char-before) ?\{)
+           (eq (char-syntax (char-after)) ?_)
+           (eq (char-after) ?\})
+           )))
+
+(defun awesome-pair-in-string-p (&optional state)
+  (and (nth 3 (or state (awesome-pair-current-parse-state)))
+       t))
+
+(defun awesome-pair-in-comment-p (&optional state)
+  (and (nth 4 (or state (awesome-pair-current-parse-state)))
+       t))
+
+(defun awesome-pair-current-parse-state ()
+  (let ((point (point)))
+    (beginning-of-defun)
+    (parse-partial-sexp (point) point)))
+
+(defun awesome-pair-string-start+end-points (&optional state)
+  (save-excursion
+    (let ((start (nth 8 (or state (awesome-pair-current-parse-state)))))
+      (goto-char start)
+      (forward-sexp 1)
+      (cons start (1- (point))))))
+
+(defun awesome-pair-in-string-escape-p ()
+  (let ((oddp nil))
+    (save-excursion
+      (while (eq (char-before) ?\\ )
+        (setq oddp (not oddp))
+        (backward-char)))
+    oddp))
+
+(defun awesome-pair-backward-delete-in-string ()
+  (let ((start+end (awesome-pair-string-start+end-points)))
+    (cond ((not (eq (1- (point)) (car start+end)))
+           (if (awesome-pair-in-string-escape-p)
+               (delete-char 1))
+           (backward-delete-char 1)
+           (if (awesome-pair-in-string-escape-p)
+               (backward-delete-char 1)))
+          ((eq (point) (cdr start+end))
+           (backward-delete-char 1)
+           (delete-char 1)))))
+
 (defun awesome-pair-splice-string (argument)
   (let ((original-point (point))
         (start+end (awesome-pair-string-start+end-points)))
@@ -471,7 +506,6 @@
       (error nil))))
 
 (defun awesome-pair-hack-kill-region (start end)
-  (interactive "r")
   (let ((this-command nil)
         (last-command nil))
     (kill-region start end)))
@@ -595,21 +629,9 @@
                     (memq syn-after  '(?_ ?w))))) ;   constituents.
          (insert " "))))
 
-(defun awesome-pair-kill ()
-  "It's annoying that we need re-indent line after we delete blank line with `awesome-pair-kill'.
-`paredt-kill+' fixed this problem.
 
-If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome-pair-kill' for smarter kill operation."
-  (interactive)
-  (cond ((eq major-mode 'web-mode)
-         (awesome-pair-web-mode-kill))
-        ((eq major-mode 'ruby-mode)
-         (awesome-pair-ruby-mode-kill))
-        (t
-         (awesome-pair-common-mode-kill))))
 
 (defun awesome-pair-common-mode-kill ()
-  (interactive)
   (if (awesome-pair-blank-line-p)
       (awesome-pair-kill-blank-line-and-reindent)
     (awesome-pair-kill-internal)))
@@ -622,7 +644,6 @@ If point in string area, kill string content like `awesome-pair-kill' do.
 If point in tag area, kill nearest tag attribute around point.
 If point in <% ... %>, kill rails code.
 Otherwise, do `awesome-pair-kill'."
-  (interactive)
   (if (awesome-pair-blank-line-p)
       (awesome-pair-kill-blank-line-and-reindent)
     (cond ((awesome-pair-in-string-p)
@@ -662,7 +683,6 @@ If current line is blank line, re-indent line after kill whole line.
 
 If current line is not blank, do `awesome-pair-kill' first, re-indent line if rest line start with ruby keywords.
 "
-  (interactive)
   (if (awesome-pair-blank-line-p)
       (awesome-pair-kill-blank-line-and-reindent)
     ;; Do `awesome-pair-kill' first.
@@ -687,29 +707,8 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
     (looking-at "[[:space:]]*$")))
 
 (defun awesome-pair-kill-blank-line-and-reindent ()
-  (interactive)
   (kill-region (beginning-of-thing 'line) (end-of-thing 'line))
   (back-to-indentation))
-
-(defvar awesome-pair-mode-map (make-sparse-keymap)
-  "Keymap for the awesome-pair minor mode.")
-
-(define-minor-mode awesome-pair-mode
-  "Minor mode for auto parenthesis pairing with syntax table.
-\\<awesome-pair-mode-map>"
-  )
-
-(defun awesome-pair-match-paren (arg)
-  "Go to the matching parenthesis if on parenthesis, otherwise insert %."
-  (interactive "p")
-  (cond ((or (awesome-pair-in-comment-p)
-             (awesome-pair-in-string-p))
-         (self-insert-command (or arg 1)))
-        ((looking-at "\\s\(\\|\\s\{\\|\\s\[")
-         (forward-list))
-        ((looking-back "\\s\)\\|\\s\}\\|\\s\\]")
-         (backward-list))
-        (t (self-insert-command (or arg 1)))))
 
 (provide 'awesome-pair)
 
