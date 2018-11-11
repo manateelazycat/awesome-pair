@@ -476,6 +476,221 @@
         (last-command nil))
     (kill-region start end)))
 
+(defun awesome-pair-kill-internal (&optional argument)
+  (interactive "P")
+  (cond (argument
+         (kill-line (if (integerp argument) argument 1)))
+        ((awesome-pair-in-string-p)
+         (awesome-pair-kill-line-in-string))
+        ((or (awesome-pair-in-comment-p)
+             (save-excursion
+               (awesome-pair-skip-whitespace t (point-at-eol))
+               (or (eq (char-after) ?\; )
+                   (eolp))))
+                                        ;** Be careful about trailing backslashes.
+         (kill-line))
+        (t (awesome-pair-kill-sexps-on-line))))
+
+(defun awesome-pair-kill-line-in-string ()
+  (if (save-excursion (awesome-pair-skip-whitespace t (point-at-eol))
+                      (eolp))
+      (kill-line)
+    (save-excursion
+      ;; Be careful not to split an escape sequence.
+      (if (awesome-pair-in-string-escape-p)
+          (backward-char))
+      (let ((beginning (point)))
+        (while (not (or (eolp)
+                        (eq (char-after) ?\" )))
+          (forward-char)
+          ;; Skip past escaped characters.
+          (if (eq (char-before) ?\\ )
+              (forward-char)))
+        (kill-region beginning (point))))))
+
+(defun awesome-pair-skip-whitespace (trailing-p &optional limit)
+  (funcall (if trailing-p 'skip-chars-forward 'skip-chars-backward)
+           " \t\n"   ; This should skip using the syntax table, but LF
+           limit))
+
+(defun awesome-pair-kill-sexps-on-line ()
+  (if (awesome-pair-in-char-p)          ; Move past the \ and prefix.
+      (backward-char 2))                ; (# in Scheme/CL, ? in elisp)
+  (let ((beginning (point))
+        (eol (point-at-eol)))
+    (let ((end-of-list-p (awesome-pair-forward-sexps-to-kill beginning eol)))
+      (if end-of-list-p (progn (up-list) (backward-char)))
+      (if kill-whole-line
+          (awesome-pair-kill-sexps-on-whole-line beginning)
+        (kill-region beginning
+                     (if (and (not end-of-list-p)
+                              (eq (point-at-eol) eol))
+                         eol
+                       (point)))))))
+
+(defun awesome-pair-in-string-escape-p ()
+  (let ((oddp nil))
+    (save-excursion
+      (while (eq (char-before) ?\\ )
+        (setq oddp (not oddp))
+        (backward-char)))
+    oddp))
+
+(defun awesome-pair-in-char-p (&optional argument)
+  (let ((argument (or argument (point))))
+    (and (eq (char-before argument) ?\\ )
+         (not (eq (char-before (1- argument)) ?\\ )))))
+
+(defun awesome-pair-forward-sexps-to-kill (beginning eol)
+  (let ((end-of-list-p nil)
+        (firstp t))
+    (catch 'return
+      (while t
+        (if (and kill-whole-line (eobp)) (throw 'return nil))
+        (save-excursion
+          (unless (ignore-errors
+                    (forward-sexp)
+                    t)
+            (up-list)
+            (setq end-of-list-p (eq (point-at-eol) eol))
+            (throw 'return nil))
+          (if (or (and (not firstp)
+                       (not kill-whole-line)
+                       (eobp))
+                  (not (ignore-errors
+                         (backward-sexp)
+                         t))
+                  (not (eq (point-at-eol) eol)))
+              (throw 'return nil)))
+        (forward-sexp)
+        (if (and firstp
+                 (not kill-whole-line)
+                 (eobp))
+            (throw 'return nil))
+        (setq firstp nil)))
+    end-of-list-p))
+
+(defun awesome-pair-kill-sexps-on-whole-line (beginning)
+  (kill-region beginning
+               (or (save-excursion    ; Delete trailing indentation...
+                     (awesome-pair-skip-whitespace t)
+                     (and (not (eq (char-after) ?\; ))
+                          (point)))
+                   ;; ...or just use the point past the newline, if
+                   ;; we encounter a comment.
+                   (point-at-eol)))
+  (cond ((save-excursion (awesome-pair-skip-whitespace nil (point-at-bol))
+                         (bolp))
+         ;; Nothing but indentation before the point, so indent it.
+         (lisp-indent-line))
+        ((eobp) nil)      ; Protect the CHAR-SYNTAX below against NIL.
+        ;; Insert a space to avoid invalid joining if necessary.
+        ((let ((syn-before (char-syntax (char-before)))
+               (syn-after  (char-syntax (char-after))))
+           (or (and (eq syn-before ?\) )          ; Separate opposing
+                    (eq syn-after  ?\( ))         ;   parentheses,
+               (and (eq syn-before ?\" )          ; string delimiter
+                    (eq syn-after  ?\" ))         ;   pairs,
+               (and (memq syn-before '(?_ ?w))    ; or word or symbol
+                    (memq syn-after  '(?_ ?w))))) ;   constituents.
+         (insert " "))))
+
+(defun awesome-pair-kill ()
+  "It's annoying that we need re-indent line after we delete blank line with `awesome-pair-kill'.
+`paredt-kill+' fixed this problem.
+
+If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome-pair-kill' for smarter kill operation."
+  (interactive)
+  (cond ((eq major-mode 'web-mode)
+         (awesome-pair-web-mode-kill))
+        ((eq major-mode 'ruby-mode)
+         (awesome-pair-ruby-mode-kill))
+        (t
+         (awesome-pair-common-mode-kill))))
+
+(defun awesome-pair-common-mode-kill ()
+  (interactive)
+  (if (awesome-pair-blank-line-p)
+      (awesome-pair-kill-blank-line-and-reindent)
+    (awesome-pair-kill-internal)))
+
+(defun awesome-pair-web-mode-kill ()
+  "It's a smarter kill function for `web-mode'.
+
+If current line is blank line, re-indent line after kill whole line.
+If point in string area, kill string content like `awesome-pair-kill' do.
+If point in tag area, kill nearest tag attribute around point.
+If point in <% ... %>, kill rails code.
+Otherwise, do `awesome-pair-kill'."
+  (interactive)
+  (if (awesome-pair-blank-line-p)
+      (awesome-pair-kill-blank-line-and-reindent)
+    (cond ((awesome-pair-in-string-p)
+           (awesome-pair-kill-internal))
+          (t
+           (let (char-count-before-kill
+                 char-count-after-kill
+                 kill-start-point)
+             ;; Try do `web-mode-attribute-kill'.
+             (setq char-count-before-kill (- (point-max) (point-min)))
+             (web-mode-attribute-kill)
+             (setq char-count-after-kill (- (point-max) (point-min)))
+             ;; Try continue if nothing change after `web-mode-attribute-kill'.
+             (when (equal char-count-before-kill char-count-after-kill)
+               ;; Do `awesome-pair-kill' if point at front of <%.
+               (if (looking-at "\\(\\s-+<%\\|<%\\)")
+                   (awesome-pair-kill-internal)
+                 (setq kill-start-point (point))
+                 ;; Kill content in <% ... %> if found %> in rest line.
+                 (if (search-forward-regexp
+                      ".*\\(%>\\)"
+                      (save-excursion
+                        (end-of-line)
+                        (point))
+                      t)
+                     (progn
+                       (backward-char (length (substring-no-properties (match-string 1))))
+                       (kill-region kill-start-point (point)))
+                   ;; Do `awesome-pair-kill' last.
+                   (awesome-pair-kill-internal)))
+               ))))))
+
+(defun awesome-pair-ruby-mode-kill ()
+  "It's a smarter kill function for `ruby-mode'.
+
+If current line is blank line, re-indent line after kill whole line.
+
+If current line is not blank, do `awesome-pair-kill' first, re-indent line if rest line start with ruby keywords.
+"
+  (interactive)
+  (if (awesome-pair-blank-line-p)
+      (awesome-pair-kill-blank-line-and-reindent)
+    ;; Do `awesome-pair-kill' first.
+    (awesome-pair-kill-internal)
+
+    ;; Re-indent current line if line start with ruby keywords.
+    (when (let (in-beginning-block-p
+                in-end-block-p
+                current-symbol)
+            (save-excursion
+              (back-to-indentation)
+              (ignore-errors (setq current-symbol (buffer-substring-no-properties (beginning-of-thing 'symbol) (end-of-thing 'symbol))))
+              (setq in-beginning-block-p (member current-symbol '("class" "module" "else" "def" "if" "unless" "case" "while" "until" "for" "begin" "do")))
+              (setq in-end-block-p (member current-symbol '("end")))
+
+              (or in-beginning-block-p in-end-block-p)))
+      (indent-for-tab-command))))
+
+(defun awesome-pair-blank-line-p ()
+  (save-excursion
+    (beginning-of-line)
+    (looking-at "[[:space:]]*$")))
+
+(defun awesome-pair-kill-blank-line-and-reindent ()
+  (interactive)
+  (kill-region (beginning-of-thing 'line) (end-of-thing 'line))
+  (back-to-indentation))
+
 (provide 'awesome-pair)
 
 ;;; awesome-pair.el ends here
