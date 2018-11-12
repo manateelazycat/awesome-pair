@@ -831,12 +831,13 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
     (looking-at "[[:space:]]*$")))
 
 (defun awesome-pair-only-whitespaces-before-cursor-p ()
-  (string-match "[[:space:]]"
-                (buffer-substring
-                 (save-excursion
-                   (beginning-of-line)
-                   (point))
-                 (point))))
+  (let ((string-before-cursor
+         (buffer-substring
+          (save-excursion
+            (beginning-of-line)
+            (point))
+          (point))))
+    (equal (length (string-trim string-before-cursor)) 0)))
 
 (defmacro awesome-pair-ignore-errors (body)
   `(ignore-errors
