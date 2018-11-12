@@ -15,7 +15,7 @@
 ;;
 ;; Features that might be required by this library:
 ;;
-;;
+;; `subr-x'
 ;;
 
 ;;; This file is NOT part of GNU Emacs
@@ -85,7 +85,7 @@
 ;;
 
 ;;; Require
-
+(require 'subr-x)
 
 ;;; Code:
 
