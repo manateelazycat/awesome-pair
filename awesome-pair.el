@@ -197,14 +197,17 @@
          (cond
           ;; Enhancement the automatic jump of web-mode.
           ((derived-mode-p 'web-mode)
-           (cond ((looking-at "<")
-                  (sgml-skip-tag-forward 1))
-                 ((looking-back ">")
-                  (sgml-skip-tag-backward 1))
-                 (t (self-insert-command (or arg 1)))))
+           (awesome-pair-web-mode-match-paren))
           (t
            (self-insert-command (or arg 1))))
          )))
+
+(defun awesome-pair-web-mode-match-paren ()
+  (cond ((looking-at "<")
+         (sgml-skip-tag-forward 1))
+        ((looking-back ">")
+         (sgml-skip-tag-backward 1))
+        (t (self-insert-command (or arg 1)))))
 
 (defun awesome-pair-backward-delete ()
   (interactive)
