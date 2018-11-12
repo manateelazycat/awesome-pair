@@ -193,7 +193,18 @@
          (forward-list))
         ((looking-back "\\s\)\\|\\s\}\\|\\s\\]")
          (backward-list))
-        (t (self-insert-command (or arg 1)))))
+        (t
+         (cond
+          ;; Enhancement the automatic jump of web-mode.
+          ((derived-mode-p 'web-mode)
+           (cond ((looking-at "<")
+                  (sgml-skip-tag-forward 1))
+                 ((looking-back ">")
+                  (sgml-skip-tag-backward 1))
+                 (t (self-insert-command (or arg 1)))))
+          (t
+           (self-insert-command (or arg 1))))
+         )))
 
 (defun awesome-pair-backward-delete ()
   (interactive)
@@ -214,9 +225,9 @@
 
 If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome-pair-kill' for smarter kill operation."
   (interactive)
-  (cond ((eq major-mode 'web-mode)
+  (cond ((derived-mode-p 'web-mode)
          (awesome-pair-web-mode-kill))
-        ((eq major-mode 'ruby-mode)
+        ((derived-mode-p 'ruby-mode)
          (awesome-pair-ruby-mode-kill))
         (t
          (awesome-pair-common-mode-kill))))
