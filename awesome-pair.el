@@ -141,10 +141,11 @@
          (insert ")"))
         (t
          (let ((close (awesome-pair-missing-close)))
-           (if (and close
-                    (eq ?\) (matching-paren close)))
-               (insert ")")
-             )))))
+           (if close
+               (if (eq ?\) (matching-paren close))
+                   (insert ")"))
+             (up-list))
+           ))))
 
 (defun awesome-pair-close-curly ()
   (interactive)
@@ -153,10 +154,11 @@
          (insert "}"))
         (t
          (let ((close (awesome-pair-missing-close)))
-           (if (and close
-                    (eq ?\} (matching-paren close)))
-               (insert "}")
-             )))))
+           (if close
+               (if (eq ?\} (matching-paren close))
+                   (insert "}"))
+             (up-list))
+           ))))
 
 (defun awesome-pair-close-bracket ()
   (interactive)
@@ -165,10 +167,11 @@
          (insert "]"))
         (t
          (let ((close (awesome-pair-missing-close)))
-           (if (and close
-                    (eq ?\] (matching-paren close)))
-               (insert "]")
-             )))))
+           (if close
+               (if (eq ?\] (matching-paren close))
+                   (insert "]"))
+             (up-list))
+           ))))
 
 (defun awesome-pair-double-quote ()
   (interactive)
