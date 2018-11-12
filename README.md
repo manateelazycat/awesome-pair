@@ -10,7 +10,7 @@ In your `~/.emacs`, add the following two lines:
 (require 'awesome-pair)
 ```
 
-## Enable and binding keys
+## Enabled in the specified programming language
 Not all programming languages ​​are suitable for parenthesis auto-completion.
 You can add awesome-pair.el to the programming language mode like below:
 
@@ -49,24 +49,24 @@ You can add awesome-pair.el to the programming language mode like below:
 Then binding below awesome-pair.el commands with below keystrokes:
 
 ```Elisp
-(global-set-key (kbd "(") 'awesome-pair-open-round)
-(global-set-key (kbd "[") 'awesome-pair-open-bracket)
-(global-set-key (kbd "{") 'awesome-pair-open-curly)
-(global-set-key (kbd ")") 'awesome-pair-close-round)
-(global-set-key (kbd "]") 'awesome-pair-close-bracket)
-(global-set-key (kbd "}") 'awesome-pair-close-curly)
+(define-key awesome-pair-mode-map (kbd "(") 'awesome-pair-open-round)
+(define-key awesome-pair-mode-map (kbd "[") 'awesome-pair-open-bracket)
+(define-key awesome-pair-mode-map (kbd "{") 'awesome-pair-open-curly)
+(define-key awesome-pair-mode-map (kbd ")") 'awesome-pair-close-round)
+(define-key awesome-pair-mode-map (kbd "]") 'awesome-pair-close-bracket)
+(define-key awesome-pair-mode-map (kbd "}") 'awesome-pair-close-curly)
 
-(global-set-key (kbd "%") 'awesome-pair-match-paren)
-(global-set-key (kbd "\"") 'awesome-pair-double-quote)
+(define-key awesome-pair-mode-map (kbd "%") 'awesome-pair-match-paren)
+(define-key awesome-pair-mode-map (kbd "\"") 'awesome-pair-double-quote)
 
-(global-set-key (kbd "M-o") 'awesome-pair-backward-delete) 
-(global-set-key (kbd "C-k") 'awesome-pair-kill)
+(define-key awesome-pair-mode-map (kbd "M-o") 'awesome-pair-backward-delete) 
+(define-key awesome-pair-mode-map (kbd "C-k") 'awesome-pair-kill)
 
-(global-set-key (kbd "M-\"") 'awesome-pair-wrap-double-quote) 
-(global-set-key (kbd "M-[") 'awesome-pair-wrap-bracket)
-(global-set-key (kbd "M-{") 'awesome-pair-wrap-curly)
-(global-set-key (kbd "M-(") 'awesome-pair-wrap-round)
-(global-set-key (kbd "M-)") 'awesome-pair-unwrap)
+(define-key awesome-pair-mode-map (kbd "M-\"") 'awesome-pair-wrap-double-quote) 
+(define-key awesome-pair-mode-map (kbd "M-[") 'awesome-pair-wrap-bracket)
+(define-key awesome-pair-mode-map (kbd "M-{") 'awesome-pair-wrap-curly)
+(define-key awesome-pair-mode-map (kbd "M-(") 'awesome-pair-wrap-round)
+(define-key awesome-pair-mode-map (kbd "M-)") 'awesome-pair-unwrap)
 
-(global-set-key (kbd "M-:") 'awesome-pair-jump-out-pair-and-newline) 
+(define-key awesome-pair-mode-map (kbd "M-:") 'awesome-pair-jump-out-pair-and-newline) 
 ```
