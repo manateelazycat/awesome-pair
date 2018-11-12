@@ -41,6 +41,7 @@ You can add awesome-pair.el to the programming language mode like below:
                'qmake-mode-hook
                'lua-mode-hook
                'swift-mode-hook
+               'minibuffer-inactive-mode-hook
                ))
   (add-hook hook '(lambda () (awesome-pair-mode 1))))
 ```
