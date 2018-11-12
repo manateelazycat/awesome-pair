@@ -271,7 +271,10 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
         (goto-char (+ end 1))
         (insert ")"))
       )))
-  (forward-char))
+  ;; Forward to jump in parenthesis.
+  (forward-char)
+  ;; Indent wrap area.
+  (awesome-pair-indent-parenthesis-area))
 
 (defun awesome-pair-wrap-bracket ()
   (interactive)
@@ -309,7 +312,10 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
         (goto-char (+ end 1))
         (insert "]"))
       )))
-  (forward-char))
+  ;; Forward to jump in parenthesis.
+  (forward-char)
+  ;; Indent wrap area.
+  (awesome-pair-indent-parenthesis-area))
 
 (defun awesome-pair-wrap-curly ()
   (interactive)
@@ -347,7 +353,10 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
         (goto-char (+ end 1))
         (insert "}"))
       )))
-  (forward-char))
+  ;; Forward to jump in parenthesis.
+  (forward-char)
+  ;; Indent wrap area.
+  (awesome-pair-indent-parenthesis-area))
 
 (defun awesome-pair-wrap-double-quote ()
   (interactive)
@@ -379,7 +388,10 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
         (insert "\"")
         (goto-char (+ end 1))
         (insert "\"")))))
-  (forward-char))
+  ;; Forward to jump in parenthesis.
+  (forward-char)
+  ;; Indent wrap area.
+  (awesome-pair-indent-parenthesis-area))
 
 (defun awesome-pair-unwrap (&optional argument)
   (interactive "P")
@@ -717,6 +729,17 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
 (defun awesome-pair-kill-blank-line-and-reindent ()
   (kill-region (beginning-of-thing 'line) (end-of-thing 'line))
   (back-to-indentation))
+
+(defun awesome-pair-indent-parenthesis-area ()
+  (let ((bound-start (save-excursion
+                       (backward-up-list)
+                       (point)))
+        (bound-end (save-excursion
+                     (up-list)
+                     (point)
+                     )))
+    (save-excursion
+      (indent-region bound-start bound-end))))
 
 ;;;;;;;;;;;;;;;;; Utils functions ;;;;;;;;;;;;;;;;;;;;;;
 (defun awesome-pair-current-parse-state ()
