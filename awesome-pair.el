@@ -698,6 +698,10 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
   (if (awesome-pair-is-blank-line-p)
       (awesome-pair-kill-blank-line-and-reindent)
     (cond
+     ;; Kill all template between <% ... %>
+     ((and (looking-at "<%")
+           (save-excursion (search-forward-regexp "%>" nil t)))
+      (kill-region (point) (search-forward-regexp "%>" nil t)))
      ;; Kill string if current pointer in string area.
      ((awesome-pair-in-string-p)
       (awesome-pair-kill-internal))
