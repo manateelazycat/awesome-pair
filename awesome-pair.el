@@ -714,14 +714,8 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
       (awesome-pair-delete-whitespace-before-cursor))
      (t
       (unless (awesome-pair-ignore-errors
-               ;; Kill with sexp block.
-               (let (kill-start kill-end)
-                 (save-excursion
-                   (web-mode-forward-sexp 1)
-                   (setq kill-end (point))
-                   (web-mode-backward-sexp 1)
-                   (setq kill-start (point)))
-                 (kill-region (min kill-start (point)) kill-end)))
+               ;; Kill all sexps in current line.
+               (awesome-pair-kill-sexps-on-line))
         ;; Kill block if sexp parse failed.
         (web-mode-block-kill))))))
 
