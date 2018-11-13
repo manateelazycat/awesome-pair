@@ -437,14 +437,26 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
 (defun awesome-pair-jump-left ()
   "To left of previous match parentheses."
   (interactive)
-  (backward-char 1)
-  (while (not (looking-at "\\(['\"<({]\\|[[]\\)")) (backward-char 1)))
+  (cond
+   ;; Jump out of string if cursor in string area.
+   ((awesome-pair-in-string-p)
+    (goto-char (car (awesome-pair-string-start+end-points))))
+   ;; Jump to previous pair.
+   (t
+    (backward-char 1)
+    (while (not (looking-at "\\(['\"<({]\\|[[]\\)")) (backward-char 1)))))
 
 (defun awesome-pair-jump-right ()
   "To right of next match parentheses."
   (interactive)
-  (while (not (looking-at "\\(['\">)}]\\|]\\)")) (forward-char 1))
-  (forward-char 1))
+  (cond
+   ;; Jump out of string if cursor in string area.
+   ((awesome-pair-in-string-p)
+    (goto-char (+ (cdr (awesome-pair-string-start+end-points)) 1)))
+   ;; Jump to next pair.
+   (t
+    (while (not (looking-at "\\(['\">)}]\\|]\\)")) (forward-char 1))
+    (forward-char 1))))
 
 (defun awesome-pair-delete-whitespace-before-cursor ()
   (kill-region (save-excursion
