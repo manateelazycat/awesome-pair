@@ -719,7 +719,9 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
      ((awesome-pair-in-single-quote-string-p)
       (awesome-pair-kill-line-in-single-quote-string))
      ;; Kill element if no attributes in tag.
-     ((looking-at ">?</")
+     ((and
+       (looking-at "\\s-?+</")
+       (looking-back "<[a-z]+\\s-?>\\s-?+"))
       (web-mode-element-kill 1))
      ;; Kill whitespace in tag.
      ((looking-at "\\s-+>")
