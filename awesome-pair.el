@@ -765,6 +765,9 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
          (search-backward-regexp "</" nil t)
          (point)
          )))
+     ;; Kill line if rest chars is whitespace.
+     ((looking-at "\\s-?+\n")
+      (kill-line))
      (t
       (unless (awesome-pair-ignore-errors
                ;; Kill all sexps in current line.
