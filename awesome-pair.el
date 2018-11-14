@@ -726,6 +726,14 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
       (search-forward-regexp ">" nil t)
       (backward-char)
       (awesome-pair-delete-whitespace-before-cursor))
+     ;; Kill tag if in start or end tag.
+     ((or
+       (and (looking-at ">")
+            (looking-back "<[a-z]+"))
+       (and (looking-at ">")
+            (looking-back "</[a-z]+")))
+      (beginning-of-thing 'sexp)
+      (web-mode-element-kill 1))
      ;; Kill attributes if point in attributes area.
      ((and
        (web-mode-attribute-beginning-position)
