@@ -726,6 +726,21 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
       (search-forward-regexp ">" nil t)
       (backward-char)
       (awesome-pair-delete-whitespace-before-cursor))
+     ;; Kill attributes if point in attributes area.
+     ((and
+       (web-mode-attribute-beginning-position)
+       (web-mode-attribute-end-position)
+       (>= (point) (web-mode-attribute-beginning-position))
+       (<= (point) (web-mode-attribute-end-position)))
+      (web-mode-attribute-kill))
+     ;; Kill attributes if only space between point and attributes start.
+     ((and
+       (looking-at "\\s-+")
+       (save-excursion
+         (search-forward-regexp "\\s-+" nil t)
+         (equal (point) (web-mode-attribute-beginning-position))))
+      (search-forward-regexp "\\s-+")
+      (web-mode-attribute-kill))
      (t
       (unless (awesome-pair-ignore-errors
                ;; Kill all sexps in current line.
