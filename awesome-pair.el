@@ -782,19 +782,6 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
          (equal (point) (web-mode-attribute-beginning-position))))
       (search-forward-regexp "\\s-+")
       (web-mode-attribute-kill))
-     ;; Kill content in tag.
-     ((and
-       (save-excursion
-         (search-backward-regexp "<[a-z]+\\s-?>" nil t))
-       (save-excursion
-         (search-forward-regexp "</[a-z]+\\s-?>" nil t)))
-      (kill-region
-       (point)
-       (save-excursion
-         (search-forward-regexp "</[a-z]+\\s-?>" nil t)
-         (search-backward-regexp "</" nil t)
-         (point)
-         )))
      ;; Kill line if rest chars is whitespace.
      ((looking-at "\\s-?+\n")
       (kill-line))
