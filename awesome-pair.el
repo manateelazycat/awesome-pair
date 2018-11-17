@@ -680,9 +680,10 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
         (if (and kill-whole-line (eobp)) (throw 'return nil))
         (save-excursion
           (unless (awesome-pair-ignore-errors (forward-sexp))
-            (up-list)
-            (setq end-of-list-p (eq (point-at-eol) eol))
-            (throw 'return nil))
+            (if (awesome-pair-ignore-errors (up-list))
+                (progn
+                  (setq end-of-list-p (eq (point-at-eol) eol))
+                  (throw 'return nil))))
           (if (or (and (not firstp)
                        (not kill-whole-line)
                        (eobp))
