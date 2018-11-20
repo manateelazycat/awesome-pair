@@ -614,10 +614,11 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
         (last-command nil))
     (kill-region start end)))
 
-(defun awesome-pair-kill-internal (&optional argument)
-  (interactive "P")
-  (cond (argument
-         (kill-line (if (integerp argument) argument 1)))
+(defun awesome-pair-kill-internal ()
+  (cond (current-prefix-arg
+         (kill-line (if (integerp current-prefix-arg)
+                        current-prefix-arg
+                      1)))
         ((awesome-pair-in-string-p)
          (awesome-pair-kill-line-in-string))
         ((awesome-pair-in-single-quote-string-p)
