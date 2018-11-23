@@ -6,8 +6,8 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 0.1
-;; Last-Updated: 2018-11-11 09:27:58
+;; Version: 0.2
+;; Last-Updated: 2018-11-23 19:52:37
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -69,6 +69,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2018/11/23
+;;	* Make `awesome-pair-kill-line-in-string' support single quote string.
 ;;
 ;; 2018/11/11
 ;;      * First released.
@@ -639,18 +642,24 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
     (kill-region (point) sexp-end)))
 
 (defun awesome-pair-kill-line-in-string ()
-  (if (save-excursion (awesome-pair-skip-whitespace t (point-at-eol))
-                      (eolp))
+  (if (save-excursion
+        (awesome-pair-skip-whitespace t (point-at-eol))
+        (eolp))
       (kill-line)
     (save-excursion
       (if (awesome-pair-in-string-escape-p)
           (backward-char))
       (let ((beginning (point)))
         (while (not (or (eolp)
-                        (eq (char-after) ?\" )))
+                        (eq (char-after) ?\" )
+                        (eq (char-after) ?\' )
+                        ))
           (forward-char)
           (if (eq (char-before) ?\\ )
               (forward-char)))
+        ;; Move forward if next is '"
+        (when (looking-at "'\"")
+          (forward-char))
         (kill-region beginning (point))))))
 
 (defun awesome-pair-skip-whitespace (trailing-p &optional limit)
