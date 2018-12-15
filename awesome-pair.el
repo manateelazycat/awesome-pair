@@ -909,7 +909,7 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
 
 (defun awesome-pair-in-string-p (&optional state)
   (save-excursion
-    (or (nth 3 (or state (insert-translated-name-current-parse-state)))
+    (or (nth 3 (or state (awesome-pair-current-parse-state)))
         (and
          (eq (get-text-property (point) 'face) 'font-lock-string-face)
          (eq (get-text-property (- (point) 1) 'face) 'font-lock-string-face))
@@ -920,7 +920,7 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
 
 (defun awesome-pair-in-comment-p (&optional state)
   (save-excursion
-    (or (nth 4 (or state (insert-translated-name-current-parse-state)))
+    (or (nth 4 (or state (awesome-pair-current-parse-state)))
         (eq (get-text-property (point) 'face) 'font-lock-comment-face))))
 
 (defun awesome-pair-in-string-escape-p ()
