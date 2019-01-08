@@ -6,8 +6,8 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 0.6
-;; Last-Updated: 2018-12-27 22:34:07
+;; Version: 0.7
+;; Last-Updated: 2019-01-09 06:43:19
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -69,6 +69,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/01/09
+;;      * Just indent parent expression after unwrap pair when in lisp like language.
 ;;
 ;; 2018/12/27
 ;;      * Just clean unnecessary whitespace before close parenthesis when in lisp like language.
@@ -449,9 +452,14 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
         (forward-sexp)
         (backward-delete-char 1))
       (delete-char 1)
-      (ignore-errors
-        (backward-up-list)
-        (indent-sexp)))))
+      ;; Try to indent parent expression after unwrap pair.
+      ;; This feature just enable in lisp-like language.
+      (when (or
+             (derived-mode-p 'lisp-mode)
+             (derived-mode-p 'emacs-lisp-mode))
+        (ignore-errors
+          (backward-up-list)
+          (indent-sexp))))))
 
 (defun awesome-pair-jump-out-pair-and-newline ()
   (interactive)
