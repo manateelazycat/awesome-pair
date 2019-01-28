@@ -6,8 +6,8 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 0.7
-;; Last-Updated: 2019-01-09 06:43:19
+;; Version: 0.8
+;; Last-Updated: 2019-01-29 06:13:06
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -69,6 +69,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/01/29
+;;      * Fixed bug where `awesome-pair-jump-out-pair-and-newline' function did not clean unnecessary whitespaces sometimes. 
 ;;
 ;; 2019/01/09
 ;;      * Just indent parent expression after unwrap pair when in lisp like language.
@@ -486,7 +489,7 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
                      (goto-char up-list-point)
                      (backward-char)
                      (when (awesome-pair-only-whitespaces-before-cursor-p)
-                       (awesome-pair-delete-whitespace-before-cursor))))))
+                       (awesome-pair-delete-whitespace-around-cursor))))))
            ;; Try to clean blank line if no pair can jump out.
            (if (awesome-pair-is-blank-line-p)
                (awesome-pair-kill-current-line))))))
@@ -521,6 +524,16 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
                  (forward-char)
                  (point))
                (point)))
+
+(defun awesome-pair-delete-whitespace-around-cursor ()
+  (kill-region (save-excursion
+                 (search-backward-regexp "[^ \t\n]" nil t)
+                 (forward-char)
+                 (point))
+               (save-excursion
+                 (search-forward-regexp "[^ \t\n]" nil t)
+                 (backward-char)
+                 (point))))
 
 (defun awesome-pair-kill-current-line ()
   (kill-region (beginning-of-thing 'line) (end-of-thing 'line))
