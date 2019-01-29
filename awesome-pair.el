@@ -6,8 +6,8 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 0.8
-;; Last-Updated: 2019-01-29 06:13:06
+;; Version: 0.9
+;; Last-Updated: 2019-01-30 07:40:22
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -70,8 +70,12 @@
 
 ;;; Change log:
 ;;
+;; 2019/01/30
+;;      * Fix 'wrong type character-p' error when call `awesome-pair-forward-delete' in beginning of buffer.
+;;      * Add docs of `awesome-pair-forward-delete'.
+;;
 ;; 2019/01/29
-;;      * Fixed bug where `awesome-pair-jump-out-pair-and-newline' function did not clean unnecessary whitespaces sometimes. 
+;;      * Fixed bug where `awesome-pair-jump-out-pair-and-newline' function did not clean unnecessary whitespaces sometimes.
 ;;
 ;; 2019/01/09
 ;;      * Just indent parent expression after unwrap pair when in lisp like language.
@@ -953,14 +957,15 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
                (eq (char-after) ?\}))))))
 
 (defun awesome-pair-in-empty-pair-p ()
-  (save-excursion
-    (or (and (eq (char-syntax (char-before)) ?\()
-             (eq (char-after) (matching-paren (char-before))))
-        (and (eq (char-syntax (char-before)) ?_)
-             (eq (char-before) ?\{)
-             (eq (char-syntax (char-after)) ?_)
-             (eq (char-after) ?\})
-             ))))
+  (ignore-errors
+    (save-excursion
+      (or (and (eq (char-syntax (char-before)) ?\()
+               (eq (char-after) (matching-paren (char-before))))
+          (and (eq (char-syntax (char-before)) ?_)
+               (eq (char-before) ?\{)
+               (eq (char-syntax (char-after)) ?_)
+               (eq (char-after) ?\})
+               )))))
 
 (defun awesome-pair-in-single-quote-string-p ()
   (save-excursion
