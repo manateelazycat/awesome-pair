@@ -273,6 +273,20 @@
         ((not (awesome-pair-after-open-pair-p))
          (backward-delete-char 1))))
 
+(defun awesome-pair-forward-delete ()
+  (interactive)
+  (cond ((awesome-pair-in-string-p)
+         (awesome-pair-forward-delete-in-string))
+        ((awesome-pair-in-comment-p)
+         (delete-char 1))
+        ((awesome-pair-before-open-pair-p)
+         (awesome-pair-forward-movein-or-delete-open-pair))
+        ((awesome-pair-in-empty-pair-p)
+         (awesome-pair-backward-delete-in-pair))
+        ((not (awesome-pair-before-close-pair-p))
+         (delete-char 1)
+         )))
+
 (defun awesome-pair-kill ()
   "It's annoying that we need re-indent line after we delete blank line with `awesome-pair-kill'.
 `paredt-kill+' fixed this problem.
@@ -558,6 +572,11 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
       (backward-char)
     (backward-delete-char 1)))
 
+(defun awesome-pair-forward-movein-or-delete-open-pair ()
+  (if (awesome-pair-ignore-errors (save-excursion (forward-sexp)))
+      (forward-char)
+    (delete-char 1)))
+
 (defun awesome-pair-backward-delete-in-string ()
   (let ((start+end (awesome-pair-string-start+end-points)))
     (cond ((not (eq (1- (point)) (car start+end)))
@@ -569,6 +588,18 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
           ((eq (point) (cdr start+end))
            (backward-delete-char 1)
            (delete-char 1)))))
+
+(defun awesome-pair-forward-delete-in-string ()
+  (let ((start+end (awesome-pair-string-start+end-points)))
+    (cond ((not (eq (point) (cdr start+end)))
+           (cond ((awesome-pair-in-string-escape-p)
+                  (delete-char -1))
+                 ((eq (char-after) ?\\ )
+                  (delete-char +1)))
+           (delete-char +1))
+          ((eq (1- (point)) (car start+end))
+           (delete-char -1)
+           (delete-char +1)))))
 
 (defun awesome-pair-splice-string (argument)
   (let ((original-point (point))
@@ -905,6 +936,21 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
           (and (eq syn ?_ )
                (eq (char-before) ?\}))
           ))))
+
+(defun awesome-pair-before-open-pair-p ()
+  (save-excursion
+    (let ((syn (char-syntax (char-after))))
+      (or (eq syn ?\( )
+          (eq syn ?\" )
+          (and (eq syn ?_)
+               (eq (char-after) ?\{))))))
+
+(defun awesome-pair-before-close-pair-p ()
+  (save-excursion
+    (let ((syn (char-syntax (char-after))))
+      (or (eq syn ?\) )
+          (and (eq syn ?_)
+               (eq (char-after) ?\}))))))
 
 (defun awesome-pair-in-empty-pair-p ()
   (save-excursion
