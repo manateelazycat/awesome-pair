@@ -6,8 +6,8 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 0.9
-;; Last-Updated: 2019-01-30 07:40:22
+;; Version: 1.0
+;; Last-Updated: 2019-02-07 09:12:17
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -69,6 +69,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/02/07
+;;      * Don't insert \ before " if cursor at comment area.
 ;;
 ;; 2019/01/30
 ;;      * Fix 'wrong type character-p' error when call `awesome-pair-forward-delete' in beginning of buffer.
@@ -230,9 +233,10 @@
 
 (defun awesome-pair-double-quote ()
   (interactive)
-  (cond ((or (awesome-pair-in-string-p)
-             (awesome-pair-in-comment-p))
+  (cond ((awesome-pair-in-string-p)
          (insert "\\\""))
+        ((awesome-pair-in-comment-p)
+         (insert "\""))
         (t
          (insert "\"\"")
          (backward-char))
