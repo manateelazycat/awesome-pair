@@ -6,8 +6,8 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 1.1
-;; Last-Updated: 2019-02-07 22:12:29
+;; Version: 1.2
+;; Last-Updated: 2019-02-09 02:27:40
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -69,6 +69,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/02/09
+;;      * Insert ) directly in sh-mode for case ... in syntax.
 ;;
 ;; 2019/02/07
 ;;      * Don't insert \ before " if cursor at comment area.
@@ -197,6 +200,9 @@
   (interactive)
   (cond ((or (awesome-pair-in-string-p)
              (awesome-pair-in-comment-p))
+         (insert ")"))
+        ;; Insert ) directly in sh-mode for case ... in syntax.
+        ((derived-mode-p 'sh-mode)
          (insert ")"))
         (t
          (let ((close (awesome-pair-missing-close)))
