@@ -6,8 +6,8 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 1.2
-;; Last-Updated: 2019-02-09 02:27:40
+;; Version: 1.3
+;; Last-Updated: 2019-02-27 08:56:34
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -69,6 +69,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/02/27
+;;      * Don't insert \" in string that wrap by `...` when current mode is golang.
 ;;
 ;; 2019/02/09
 ;;      * Insert ) directly in sh-mode for case ... in syntax.
@@ -241,7 +244,12 @@
 (defun awesome-pair-double-quote ()
   (interactive)
   (cond ((awesome-pair-in-string-p)
-         (insert "\\\""))
+         (if (and (derived-mode-p 'go-mode)
+                  (equal (save-excursion (nth 3 (awesome-pair-current-parse-state))) 96))
+             ;; When current mode is golang.
+             ;; Don't insert \" in string that wrap by `...`
+             (insert "\"")
+           (insert "\\\"")))
         ((awesome-pair-in-comment-p)
          (insert "\""))
         (t
