@@ -6,8 +6,8 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 1.5
-;; Last-Updated: 2019-03-16 18:38:28
+;; Version: 1.6
+;; Last-Updated: 2019-03-16 20:37:10
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -72,6 +72,7 @@
 ;;
 ;; 2019/03/16
 ;;      * Make `awesome-pair-wrap-double-quote' and `awesome-pair-unwrap' support web-mode.
+;;      * Add new command `awesome-pair-space'.
 ;;
 ;; 2019/03/12
 ;;      * Add new command `awesome-pair-equal'.
@@ -262,6 +263,30 @@
          (insert "\"\"")
          (backward-char))
         ))
+
+(defun awesome-pair-space (arg)
+  "Wrap space around cursor if cursor in blank parenthesis.
+
+input: {|} (press <SPACE> at |)
+output: { | }
+
+input: [|] (press <SPACE> at |)
+output: [ | ]
+"
+  (interactive "p")
+  (if (> arg 1)
+      (self-insert-command arg)
+    (cond ((or (awesome-pair-in-comment-p)
+               (awesome-pair-in-string-p))
+           (insert " "))
+          ((or (and (equal (char-after) ?\} )
+                    (equal (char-before) ?\{ ))
+               (and (equal (char-after) ?\] )
+                    (equal (char-before) ?\[ )))
+           (insert "  ")
+           (backward-char 1))
+          (t
+           (insert " ")))))
 
 (defun awesome-pair-match-paren (arg)
   "Go to the matching parenthesis if on parenthesis, otherwise insert %."
