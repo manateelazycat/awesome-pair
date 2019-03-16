@@ -6,8 +6,8 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 1.4
-;; Last-Updated: 2019-03-12 22:27:42
+;; Version: 1.5
+;; Last-Updated: 2019-03-16 18:38:28
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -69,6 +69,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/03/16
+;;      * Make `awesome-pair-wrap-double-quote' and `awesome-pair-unwrap' support web-mode.
 ;;
 ;; 2019/03/12
 ;;      * Add new command `awesome-pair-equal'.
@@ -328,44 +331,45 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
 
 (defun awesome-pair-wrap-round ()
   (interactive)
-  (cond
-   ((region-active-p)
-    (let ((start (region-beginning))
-          (end (region-end)))
-      (setq mark-active nil)
-      (goto-char start)
-      (insert "(")
-      (goto-char (+ end 1))
-      (insert ")")
-      (goto-char start)))
-   ((awesome-pair-in-string-p)
-    (let ((string-bound (awesome-pair-string-start+end-points)))
-      (save-excursion
-        (goto-char (car string-bound))
-        (insert "(")
-        (goto-char (+ (cdr string-bound) 2))
-        (insert ")"))))
-   ((awesome-pair-in-comment-p)
-    (save-excursion
-      (let ((start (beginning-of-thing 'symbol))
-            (end (end-of-thing 'symbol)))
-        (goto-char start)
-        (insert "(")
-        (goto-char (+ end 1))
-        (insert ")"))))
-   (t
-    (save-excursion
-      (let ((start (beginning-of-thing 'sexp))
-            (end (end-of-thing 'sexp)))
-        (goto-char start)
-        (insert "(")
-        (goto-char (+ end 1))
-        (insert ")"))
-      )))
-  ;; Forward to jump in parenthesis.
-  (forward-char)
-  ;; Indent wrap area.
-  (awesome-pair-indent-parenthesis-area))
+  (if (derived-mode-p 'web-mode)
+      (awesome-pair-web-mode-element-wrap)
+    (cond ((region-active-p)
+           (let ((start (region-beginning))
+                 (end (region-end)))
+             (setq mark-active nil)
+             (goto-char start)
+             (insert "(")
+             (goto-char (+ end 1))
+             (insert ")")
+             (goto-char start)))
+          ((awesome-pair-in-string-p)
+           (let ((string-bound (awesome-pair-string-start+end-points)))
+             (save-excursion
+               (goto-char (car string-bound))
+               (insert "(")
+               (goto-char (+ (cdr string-bound) 2))
+               (insert ")"))))
+          ((awesome-pair-in-comment-p)
+           (save-excursion
+             (let ((start (beginning-of-thing 'symbol))
+                   (end (end-of-thing 'symbol)))
+               (goto-char start)
+               (insert "(")
+               (goto-char (+ end 1))
+               (insert ")"))))
+          (t
+           (save-excursion
+             (let ((start (beginning-of-thing 'sexp))
+                   (end (end-of-thing 'sexp)))
+               (goto-char start)
+               (insert "(")
+               (goto-char (+ end 1))
+               (insert ")"))
+             )))
+    ;; Forward to jump in parenthesis.
+    (forward-char)
+    ;; Indent wrap area.
+    (awesome-pair-indent-parenthesis-area)))
 
 (defun awesome-pair-wrap-bracket ()
   (interactive)
@@ -486,23 +490,26 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
 
 (defun awesome-pair-unwrap (&optional argument)
   (interactive "P")
-  (if (awesome-pair-in-string-p)
-      (awesome-pair-splice-string argument)
-    (save-excursion
-      (awesome-pair-kill-surrounding-sexps-for-splice argument)
-      (backward-up-list)
-      (save-excursion
-        (forward-sexp)
-        (backward-delete-char 1))
-      (delete-char 1)
-      ;; Try to indent parent expression after unwrap pair.
-      ;; This feature just enable in lisp-like language.
-      (when (or
-             (derived-mode-p 'lisp-mode)
-             (derived-mode-p 'emacs-lisp-mode))
-        (ignore-errors
-          (backward-up-list)
-          (indent-sexp))))))
+  (cond ((derived-mode-p 'web-mode)
+         (awesome-pair-web-mode-element-unwrap))
+        ((awesome-pair-in-string-p)
+         (awesome-pair-splice-string argument))
+        (t
+         (save-excursion
+           (awesome-pair-kill-surrounding-sexps-for-splice argument)
+           (backward-up-list)
+           (save-excursion
+             (forward-sexp)
+             (backward-delete-char 1))
+           (delete-char 1)
+           ;; Try to indent parent expression after unwrap pair.
+           ;; This feature just enable in lisp-like language.
+           (when (or
+                  (derived-mode-p 'lisp-mode)
+                  (derived-mode-p 'emacs-lisp-mode))
+             (ignore-errors
+               (backward-up-list)
+               (indent-sexp)))))))
 
 (defun awesome-pair-jump-out-pair-and-newline ()
   (interactive)
@@ -983,6 +990,47 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
       (backward-char 1)))
    (t
     (insert "="))))
+
+
+(defun awesome-pair-web-mode-element-wrap ()
+  "Like `web-mode-element-wrap', but jump after tag for continue edit."
+  (interactive)
+  (let (beg end pos tag sep)
+    (save-excursion
+      (setq tag (read-from-minibuffer "Tag name? "))
+      (setq pos (point))
+      (cond
+       (mark-active
+        (setq beg (region-beginning)
+              end (region-end)))
+       ((get-text-property pos 'tag-type)
+        (setq beg (web-mode-element-beginning-position pos)
+              end (1+ (web-mode-element-end-position pos)))
+        )
+       ((setq beg (web-mode-element-parent-position pos))
+        (setq end (1+ (web-mode-element-end-position pos)))
+        )
+       )
+      ;;      (message "beg(%S) end(%S)" beg end)
+      (when (and beg end (> end 0))
+        (setq sep (if (get-text-property beg 'tag-beg) "\n" ""))
+        (web-mode-insert-text-at-pos (concat sep "</" tag ">") end)
+        (web-mode-insert-text-at-pos (concat "<" tag ">" sep) beg)
+        (when (string= sep "\n") (indent-region beg (+ end (* (+ 3 (length tag)) 2))))
+        )
+      )                                 ;save-excursion
+    (if beg (goto-char beg))
+    (forward-char (+ 1 (length tag)))))
+
+(defun awesome-pair-web-mode-element-unwrap ()
+  "Like `web-mode-element-vanish', but you don't need jump parent tag to unwrap.
+Just like `paredit-splice-sexp+' style."
+  (interactive)
+  (save-excursion
+    (web-mode-element-parent)
+    (web-mode-element-vanish 1)
+    (back-to-indentation)
+    ))
 
 ;;;;;;;;;;;;;;;;; Utils functions ;;;;;;;;;;;;;;;;;;;;;;
 (defun awesome-pair-current-parse-state ()
