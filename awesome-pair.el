@@ -6,8 +6,8 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 1.6
-;; Last-Updated: 2019-03-16 20:37:10
+;; Version: 1.7
+;; Last-Updated: 2019-03-20 13:16:57
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -69,6 +69,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/03/20
+;;      * Don't insert quote after equal if cursor in curly parenthesis.
 ;;
 ;; 2019/03/16
 ;;      * Make `awesome-pair-wrap-double-quote' and `awesome-pair-unwrap' support web-mode.
@@ -1009,13 +1012,13 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
   (interactive)
   (cond
    ((derived-mode-p 'web-mode)
-    (if (awesome-pair-in-string-p)
+    (if (or (awesome-pair-in-string-p)
+            (awesome-pair-in-curly-p))
         (insert "=")
       (insert "=\"\"")
       (backward-char 1)))
    (t
     (insert "="))))
-
 
 (defun awesome-pair-web-mode-element-wrap ()
   "Like `web-mode-element-wrap', but jump after tag for continue edit."
@@ -1175,6 +1178,27 @@ Just like `paredit-splice-sexp+' style."
             (point))
           (point))))
     (equal (length (string-trim string-before-cursor)) 0)))
+
+(defun awesome-pair-in-curly-p ()
+  (ignore-errors
+    (save-excursion
+      (let* ((left-parent-pos
+              (progn
+                (backward-up-list)
+                (point)))
+             (right-parent-pos
+              (progn
+                (forward-list)
+                (point)))
+             (left-parent-char
+              (progn
+                (goto-char left-parent-pos)
+                (char-after)))
+             (right-parent-char
+              (progn
+                (goto-char right-parent-pos)
+                (char-before))))
+        (and (eq left-parent-char ?\{) (eq right-parent-char ?\}))))))
 
 (defmacro awesome-pair-ignore-errors (body)
   `(ignore-errors
