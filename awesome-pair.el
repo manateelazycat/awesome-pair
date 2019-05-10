@@ -7,7 +7,11 @@
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
 ;; Version: 1.8
+<<<<<<< HEAD
 ;; Last-Updated: 2019-05-10 22:27:37
+=======
+;; Last-Updated: 2019-03-29 22:35:31
+>>>>>>> b03660cbf1b512a5357368fa26ef648607a4dcd1
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -72,6 +76,9 @@
 ;;
 ;; 2019/05/10
 ;;      * Add `thingatpt' depend.
+;;      
+;; 2019/03/29
+;;      * Insert a closing parenthesis in the string of the JS file.
 ;;
 ;; 2019/03/20
 ;;      * Don't insert quote after equal if cursor in curly parenthesis.
@@ -160,6 +167,10 @@
       (goto-char (+ end 1))
       (insert ")")
       (goto-char (+ start 1))))
+   ((and (awesome-pair-in-string-p)
+         (derived-mode-p 'js-mode))
+    (insert "()")
+    (backward-char))
    ((or (awesome-pair-in-string-p)
         (awesome-pair-in-comment-p))
     (insert "("))
@@ -180,6 +191,10 @@
       (goto-char (+ end 1))
       (insert "}")
       (goto-char (+ start 1))))
+   ((and (awesome-pair-in-string-p)
+         (derived-mode-p 'js-mode))
+    (insert "{}")
+    (backward-char))
    ((or (awesome-pair-in-string-p)
         (awesome-pair-in-comment-p))
     (insert "{"))
@@ -205,6 +220,10 @@
       (goto-char (+ end 1))
       (insert "]")
       (goto-char (+ start 1))))
+   ((and (awesome-pair-in-string-p)
+         (derived-mode-p 'js-mode))
+    (insert "[]")
+    (backward-char))
    ((or (awesome-pair-in-string-p)
         (awesome-pair-in-comment-p))
     (insert "["))
