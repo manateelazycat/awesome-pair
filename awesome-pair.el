@@ -6,8 +6,8 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 1.7
-;; Last-Updated: 2019-03-20 13:16:57
+;; Version: 1.8
+;; Last-Updated: 2019-05-10 22:27:37
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -15,7 +15,7 @@
 ;;
 ;; Features that might be required by this library:
 ;;
-;; `subr-x'
+;; `subr-x' `thingatpt'
 ;;
 
 ;;; This file is NOT part of GNU Emacs
@@ -69,6 +69,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/05/10
+;;      * Add `thingatpt' depend.
 ;;
 ;; 2019/03/20
 ;;      * Don't insert quote after equal if cursor in curly parenthesis.
@@ -131,6 +134,7 @@
 
 ;;; Require
 (require 'subr-x)
+(require 'thingatpt)
 
 ;;; Code:
 
