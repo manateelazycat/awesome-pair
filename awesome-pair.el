@@ -6,11 +6,9 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 1.8
+;; Version: 1.9
 
-;; Last-Updated: 2019-05-10 22:27:37
-
-;; Last-Updated: 2019-03-29 22:35:31
+;; Last-Updated: 2019-05-14 12:32:14
 
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
@@ -74,9 +72,12 @@
 
 ;;; Change log:
 ;;
+;; 2019/05/14
+;;      * When edit *.vue file, just insert double quote after equal when point in template area.
+;;
 ;; 2019/05/10
 ;;      * Add `thingatpt' depend.
-;;      
+;;
 ;; 2019/03/29
 ;;      * Insert a closing parenthesis in the string of the JS file.
 ;;
@@ -1035,13 +1036,27 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
   (interactive)
   (cond
    ((derived-mode-p 'web-mode)
-    (if (or (awesome-pair-in-string-p)
-            (awesome-pair-in-curly-p))
-        (insert "=")
-      (insert "=\"\"")
-      (backward-char 1)))
+    (cond ((or (awesome-pair-in-string-p)
+               (awesome-pair-in-curly-p))
+           (insert "="))
+          ;; When edit *.vue file, just insert double quote after equal when point in template area.
+          ((string-equal (file-name-extension (buffer-file-name)) "vue")
+           (if (awesome-pair-vue-in-template-area)
+               (progn
+                 (insert "=\"\"")
+                 (backward-char 1))
+             (insert "=")))
+          (t
+           (insert "=\"\"")
+           (backward-char 1))))
    (t
     (insert "="))))
+
+(defun awesome-pair-vue-in-template-area ()
+  (and (save-excursion
+         (search-backward-regexp "<template>" nil t))
+       (save-excursion
+         (search-forward-regexp "</template>" nil t))))
 
 (defun awesome-pair-web-mode-element-wrap ()
   "Like `web-mode-element-wrap', but jump after tag for continue edit."
