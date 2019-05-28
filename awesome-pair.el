@@ -6,9 +6,9 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 1.9
+;; Version: 2.0
 
-;; Last-Updated: 2019-05-14 12:32:14
+;; Last-Updated: 2019-05-28 20:14:48
 
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
@@ -71,6 +71,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/05/28
+;;      * Fix `awesome-pair-kill' error when kill string in *.vue file.
 ;;
 ;; 2019/05/14
 ;;      * When edit *.vue file, just insert double quote after equal when point in template area.
@@ -1176,14 +1179,20 @@ Just like `paredit-splice-sexp+' style."
 
 (defun awesome-pair-in-string-p (&optional state)
   (save-excursion
-    (or (nth 3 (or state (awesome-pair-current-parse-state)))
-        (and
-         (eq (get-text-property (point) 'face) 'font-lock-string-face)
-         (eq (get-text-property (- (point) 1) 'face) 'font-lock-string-face))
-        (and
-         (eq (get-text-property (point) 'face) 'font-lock-doc-face)
-         (eq (get-text-property (- (point) 1) 'face) 'font-lock-doc-face))
-        )))
+    (or
+     ;; In most situation, point inside a string when 4rd state `parse-partial-sexp' is non-nil.
+     ;; but at this time, if the string delimiter is the last character of the line, the point is not in the string.
+     ;; So we need exclude this situation when check state of `parse-partial-sexp'.
+     (and
+      (nth 3 (or state (awesome-pair-current-parse-state)))
+      (not (equal (point) (line-end-position))))
+     (and
+      (eq (get-text-property (point) 'face) 'font-lock-string-face)
+      (eq (get-text-property (- (point) 1) 'face) 'font-lock-string-face))
+     (and
+      (eq (get-text-property (point) 'face) 'font-lock-doc-face)
+      (eq (get-text-property (- (point) 1) 'face) 'font-lock-doc-face))
+     )))
 
 (defun awesome-pair-in-comment-p (&optional state)
   (save-excursion
