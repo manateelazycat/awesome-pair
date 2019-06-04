@@ -6,9 +6,9 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 2.0
+;; Version: 2.1
 
-;; Last-Updated: 2019-05-28 20:14:48
+;; Last-Updated: 2019-06-04 21:30:25
 
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
@@ -71,6 +71,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/06/04
+;;      * Improve `awesome-pair-web-mode-element-wrap' when wrap region area that don't need do return operation after warp tag.
 ;;
 ;; 2019/05/28
 ;;      * Fix `awesome-pair-kill' error when kill string in *.vue file.
@@ -1070,25 +1073,30 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
       (setq pos (point))
       (cond
        (mark-active
-        (setq beg (region-beginning)
-              end (region-end)))
+        ;; We need move point to first non-empty char of region beginning line first,
+        ;; then use `web-mode-element-beginning-position' find tag area.
+        ;;
+        ;; Above step avoid new tag same line as region area
+        ;; that we need return after wrap tag.
+        (goto-char (region-beginning))
+        (back-to-indentation)
+        (setq pos (point))
+        (setq beg (web-mode-element-beginning-position pos)
+              end (1+ (web-mode-element-end-position pos))))
        ((get-text-property pos 'tag-type)
         (setq beg (web-mode-element-beginning-position pos)
-              end (1+ (web-mode-element-end-position pos)))
-        )
+              end (1+ (web-mode-element-end-position pos))))
        ((setq beg (web-mode-element-parent-position pos))
-        (setq end (1+ (web-mode-element-end-position pos)))
-        )
-       )
-      ;;      (message "beg(%S) end(%S)" beg end)
+        (setq end (1+ (web-mode-element-end-position pos)))))
       (when (and beg end (> end 0))
         (setq sep (if (get-text-property beg 'tag-beg) "\n" ""))
         (web-mode-insert-text-at-pos (concat sep "</" tag ">") end)
         (web-mode-insert-text-at-pos (concat "<" tag ">" sep) beg)
-        (when (string= sep "\n") (indent-region beg (+ end (* (+ 3 (length tag)) 2))))
-        )
-      )                                 ;save-excursion
-    (if beg (goto-char beg))
+        (when (string= sep "\n")
+          (indent-region beg (+ end (* (+ 3 (length tag)) 2))))))
+    ;; Move cursor after open tag, ready for insert attributes.
+    (if beg
+        (goto-char beg))
     (forward-char (+ 1 (length tag)))))
 
 (defun awesome-pair-web-mode-element-unwrap ()
