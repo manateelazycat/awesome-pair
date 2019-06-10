@@ -6,9 +6,9 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 2.1
+;; Version: 2.2
 
-;; Last-Updated: 2019-06-04 21:30:25
+;; Last-Updated: 2019-06-10 14:51:46
 
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
@@ -71,6 +71,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/06/10
+;;      * Fix `awesome-pair-web-mode-element-wrap' wrap area when region is active.
 ;;
 ;; 2019/06/04
 ;;      * Improve `awesome-pair-web-mode-element-wrap' when wrap region area that don't need do return operation after warp tag.
@@ -1067,37 +1070,56 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
 (defun awesome-pair-web-mode-element-wrap ()
   "Like `web-mode-element-wrap', but jump after tag for continue edit."
   (interactive)
-  (let (beg end pos tag sep)
+  (let (beg end pos tag beg-sep)
+    ;; Insert tag pair around select area.
     (save-excursion
       (setq tag (read-from-minibuffer "Tag name? "))
       (setq pos (point))
       (cond
        (mark-active
-        ;; We need move point to first non-empty char of region beginning line first,
-        ;; then use `web-mode-element-beginning-position' find tag area.
-        ;;
-        ;; Above step avoid new tag same line as region area
-        ;; that we need return after wrap tag.
-        (goto-char (region-beginning))
-        (back-to-indentation)
-        (setq pos (point))
-        (setq beg (web-mode-element-beginning-position pos)
-              end (1+ (web-mode-element-end-position pos))))
+        (setq beg (region-beginning))
+        (setq end (region-end)))
        ((get-text-property pos 'tag-type)
         (setq beg (web-mode-element-beginning-position pos)
               end (1+ (web-mode-element-end-position pos))))
        ((setq beg (web-mode-element-parent-position pos))
         (setq end (1+ (web-mode-element-end-position pos)))))
       (when (and beg end (> end 0))
-        (setq sep (if (get-text-property beg 'tag-beg) "\n" ""))
-        (web-mode-insert-text-at-pos (concat sep "</" tag ">") end)
-        (web-mode-insert-text-at-pos (concat "<" tag ">" sep) beg)
-        (when (string= sep "\n")
-          (indent-region beg (+ end (* (+ 3 (length tag)) 2))))))
-    ;; Move cursor after open tag, ready for insert attributes.
-    (if beg
-        (goto-char beg))
-    (forward-char (+ 1 (length tag)))))
+        (web-mode-insert-text-at-pos (concat "</" tag ">") end)
+        (web-mode-insert-text-at-pos (concat "<" tag ">") beg)))
+
+    (when (and beg end)
+      ;; Insert return after start tag if have text after start tag.
+      (setq beg-sep "")
+      (goto-char (+ beg (length (concat "<" tag ">"))))
+      (unless (looking-at "\\s-*$")
+        (setq beg-sep "\n")
+        (insert "\n"))
+
+      ;; Insert return before end tag if have text before end tag.
+      (goto-char (+ end (length (concat "<" tag ">")) (length beg-sep)))
+      (unless (looking-back "^\\s-*")
+        (insert "\n"))
+
+      ;; Insert return after end tag if have text after end tag.
+      (goto-char beg)
+      (goto-char (+ 1 (web-mode-element-end-position (point))))
+      (unless (looking-at "\\s-*$")
+        (insert "\n"))
+
+      ;; Indent tag area.
+      (let ((indent-beg beg)
+            (indent-end (save-excursion
+                          (goto-char beg)
+                          (+ 1 (web-mode-element-end-position (point)))
+                          )))
+        (indent-region indent-beg indent-end))
+
+      ;; Jump to start tag, ready for insert tag attributes.
+      (goto-char beg)
+      (back-to-indentation)
+      (forward-char (+ 1 (length tag)))
+      )))
 
 (defun awesome-pair-web-mode-element-unwrap ()
   "Like `web-mode-element-vanish', but you don't need jump parent tag to unwrap.
