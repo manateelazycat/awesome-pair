@@ -6,9 +6,9 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 2.2
+;; Version: 2.3
 
-;; Last-Updated: 2019-06-10 14:51:46
+;; Last-Updated: 2019-06-25 11:00:51
 
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
@@ -71,6 +71,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/06/25
+;;      * Improve `awesome-pair-wrap-round' that only wrap Tag in Vue template area.
 ;;
 ;; 2019/06/10
 ;;      * Fix `awesome-pair-web-mode-element-wrap' wrap area when region is active.
@@ -392,45 +395,60 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
 
 (defun awesome-pair-wrap-round ()
   (interactive)
-  (if (derived-mode-p 'web-mode)
-      (awesome-pair-web-mode-element-wrap)
-    (cond ((region-active-p)
-           (let ((start (region-beginning))
-                 (end (region-end)))
-             (setq mark-active nil)
+  (cond
+   ;; If in *.Vue file
+   ;; In template area, call `awesome-pair-web-mode-element-wrap'
+   ;; Otherwise, call `awesome-pair-wrap-round-pair'
+   ((string-equal (file-name-extension (buffer-file-name)) "vue")
+    (if (awesome-pair-vue-in-template-area)
+        (awesome-pair-web-mode-element-wrap)
+      (awesome-pair-wrap-round-pair)))
+   ;; If is `web-mode' but not in *.Vue file, call `awesome-pair-web-mode-element-wrap'
+   ((derived-mode-p 'web-mode)
+    (awesome-pair-web-mode-element-wrap))
+   ;; Otherwise call `awesome-pair-wrap-round-pair'
+   (t
+    (awesome-pair-wrap-round-pair))
+   ))
+
+(defun awesome-pair-wrap-round-pair ()
+  (cond ((region-active-p)
+         (let ((start (region-beginning))
+               (end (region-end)))
+           (setq mark-active nil)
+           (goto-char start)
+           (insert "(")
+           (goto-char (+ end 1))
+           (insert ")")
+           (goto-char start)))
+        ((awesome-pair-in-string-p)
+         (let ((string-bound (awesome-pair-string-start+end-points)))
+           (save-excursion
+             (goto-char (car string-bound))
+             (insert "(")
+             (goto-char (+ (cdr string-bound) 2))
+             (insert ")"))))
+        ((awesome-pair-in-comment-p)
+         (save-excursion
+           (let ((start (beginning-of-thing 'symbol))
+                 (end (end-of-thing 'symbol)))
              (goto-char start)
              (insert "(")
              (goto-char (+ end 1))
-             (insert ")")
-             (goto-char start)))
-          ((awesome-pair-in-string-p)
-           (let ((string-bound (awesome-pair-string-start+end-points)))
-             (save-excursion
-               (goto-char (car string-bound))
-               (insert "(")
-               (goto-char (+ (cdr string-bound) 2))
-               (insert ")"))))
-          ((awesome-pair-in-comment-p)
-           (save-excursion
-             (let ((start (beginning-of-thing 'symbol))
-                   (end (end-of-thing 'symbol)))
-               (goto-char start)
-               (insert "(")
-               (goto-char (+ end 1))
-               (insert ")"))))
-          (t
-           (save-excursion
-             (let ((start (beginning-of-thing 'sexp))
-                   (end (end-of-thing 'sexp)))
-               (goto-char start)
-               (insert "(")
-               (goto-char (+ end 1))
-               (insert ")"))
-             )))
-    ;; Forward to jump in parenthesis.
-    (forward-char)
-    ;; Indent wrap area.
-    (awesome-pair-indent-parenthesis-area)))
+             (insert ")"))))
+        (t
+         (save-excursion
+           (let ((start (beginning-of-thing 'sexp))
+                 (end (end-of-thing 'sexp)))
+             (goto-char start)
+             (insert "(")
+             (goto-char (+ end 1))
+             (insert ")"))
+           )))
+  ;; Forward to jump in parenthesis.
+  (forward-char)
+  ;; Indent wrap area.
+  (awesome-pair-indent-parenthesis-area))
 
 (defun awesome-pair-wrap-bracket ()
   (interactive)
