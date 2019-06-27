@@ -6,10 +6,9 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 2.3
+;; Version: 2.4
 
-;; Last-Updated: 2019-06-25 11:00:51
-
+;; Last-Updated: 2019-06-28 07:51:47
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -71,6 +70,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/06/28
+;;      * Make `awesome-pair-in-comment-p' work with `web-mode-comment-face'.
 ;;
 ;; 2019/06/25
 ;;      * Improve `awesome-pair-wrap-round' that only wrap Tag in Vue template area.
@@ -1245,7 +1247,9 @@ Just like `paredit-splice-sexp+' style."
 (defun awesome-pair-in-comment-p (&optional state)
   (save-excursion
     (or (nth 4 (or state (awesome-pair-current-parse-state)))
-        (eq (get-text-property (point) 'face) 'font-lock-comment-face))))
+        (eq (get-text-property (point) 'face) 'font-lock-comment-face)
+        (and (featurep 'web-mode)
+             (eq (get-text-property (point) 'face) 'web-mode-comment-face)))))
 
 (defun awesome-pair-in-string-escape-p ()
   (let ((oddp nil))
