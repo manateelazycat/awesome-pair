@@ -6,9 +6,9 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 2.4
+;; Version: 2.5
 
-;; Last-Updated: 2019-06-28 07:51:47
+;; Last-Updated: 2019-07-17 15:46:36
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -70,6 +70,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/07/17
+;;      * Rewrite `awesome-pair-missing-close', make `awesome-pair-fix-unbalanced-parentheses' can fix unbalance parentheses automatically.
 ;;
 ;; 2019/06/28
 ;;      * Make `awesome-pair-in-comment-p' work with `web-mode-comment-face'.
@@ -247,6 +250,18 @@
     (backward-char))
    ))
 
+(defun awesome-pair-fix-unbalanced-parentheses ()
+  (interactive)
+  (let ((close (awesome-pair-missing-close)))
+    (if close
+        (cond ((eq ?\) (matching-paren close))
+               (insert ")"))
+              ((eq ?\} (matching-paren close))
+               (insert "}"))
+              ((eq ?\] (matching-paren close))
+               (insert "]")))
+      (up-list))))
+
 (defun awesome-pair-close-round ()
   (interactive)
   (cond ((or (awesome-pair-in-string-p)
@@ -256,12 +271,7 @@
         ((derived-mode-p 'sh-mode)
          (insert ")"))
         (t
-         (let ((close (awesome-pair-missing-close)))
-           (if close
-               (if (eq ?\) (matching-paren close))
-                   (insert ")"))
-             (up-list))
-           ))))
+         (awesome-pair-fix-unbalanced-parentheses))))
 
 (defun awesome-pair-close-curly ()
   (interactive)
@@ -269,12 +279,7 @@
              (awesome-pair-in-comment-p))
          (insert "}"))
         (t
-         (let ((close (awesome-pair-missing-close)))
-           (if close
-               (if (eq ?\} (matching-paren close))
-                   (insert "}"))
-             (up-list))
-           ))))
+         (awesome-pair-fix-unbalanced-parentheses))))
 
 (defun awesome-pair-close-bracket ()
   (interactive)
@@ -282,12 +287,7 @@
              (awesome-pair-in-comment-p))
          (insert "]"))
         (t
-         (let ((close (awesome-pair-missing-close)))
-           (if close
-               (if (eq ?\] (matching-paren close))
-                   (insert "]"))
-             (up-list))
-           ))))
+         (awesome-pair-fix-unbalanced-parentheses))))
 
 (defun awesome-pair-double-quote ()
   (interactive)
@@ -668,14 +668,24 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
   (back-to-indentation))
 
 (defun awesome-pair-missing-close ()
-  (let (open)
-    (ignore-errors
-      (save-excursion
-        (backward-up-list)
-        (setq open (char-after))
-        (if (awesome-pair-ignore-errors (forward-sexp))
-            nil
-          open)))))
+  (let ((start-point (point))
+        open)
+    (save-excursion
+      ;; Get open tag.
+      (backward-up-list)
+      (setq open (char-after))
+
+      ;; Jump to start position and use `check-parens' check unbalance paren.
+      (goto-char start-point)
+      (ignore-errors
+        (check-parens))
+
+      ;; Return missing tag if point change after `check-parens'
+      ;; Otherwhere return nil.
+      (if (equal start-point (point))
+          nil
+        open)
+      )))
 
 (defun awesome-pair-backward-delete-in-pair ()
   (backward-delete-char 1)
