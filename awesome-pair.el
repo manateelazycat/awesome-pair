@@ -174,6 +174,11 @@
 \\<awesome-pair-mode-map>"
   )
 
+(defmacro awesome-pair-ignore-errors (body)
+  `(ignore-errors
+     ,body
+     t))
+
 ;;;;;;;;;;;;;;;;; Interactive functions ;;;;;;;;;;;;;;;;;;;;;;
 
 (defun awesome-pair-open-round ()
@@ -1313,11 +1318,6 @@ Just like `paredit-splice-sexp+' style."
                 (goto-char right-parent-pos)
                 (char-before))))
         (and (eq left-parent-char ?\{) (eq right-parent-char ?\}))))))
-
-(defmacro awesome-pair-ignore-errors (body)
-  `(ignore-errors
-     ,body
-     t))
 
 (provide 'awesome-pair)
 
