@@ -359,6 +359,7 @@ output: [ | ]
          )))
 
 (defun awesome-pair-web-mode-match-paren ()
+  (require 'sgml-mode)
   (cond ((looking-at "<")
          (sgml-skip-tag-forward 1))
         ((looking-back ">")
