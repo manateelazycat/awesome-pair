@@ -6,9 +6,9 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 2.6
+;; Version: 2.7
 
-;; Last-Updated: 2019-07-20 22:26:57
+;; Last-Updated: 2019-08-10 01:41:34
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -70,6 +70,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/08/10
+;;      * Try to kill element if cursor in element area.
 ;;
 ;; 2019/07/20
 ;;      * Don't test unbalance parentheses when press `awesome-pair-close-round' in markdown-mode.
@@ -1035,12 +1038,26 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
      ;; Kill line if rest chars is whitespace.
      ((looking-at "\\s-?+\n")
       (kill-line))
+     ;; Kill region if mark is active.
+     (mark-active
+      (kill-region (region-beginning) (region-end)))
+     ;; Try to kill element if cursor in element area.
+     ((awesome-pair-in-element-p)
+      (kill-region (point) (progn
+                             (web-mode-tag-match)
+                             (point))))
      (t
       (unless (awesome-pair-ignore-errors
                ;; Kill all sexps in current line.
                (awesome-pair-kill-sexps-on-line))
         ;; Kill block if sexp parse failed.
         (web-mode-block-kill))))))
+
+(defun awesome-pair-in-element-p ()
+  "Return non-nil if cursor in element area."
+  (save-mark-and-excursion
+    (web-mode-element-select)
+    mark-active))
 
 (defun awesome-pair-ruby-mode-kill ()
   "It's a smarter kill function for `ruby-mode'.
