@@ -397,10 +397,11 @@ output: [ | ]
          )))
 
 (defun awesome-pair-kill ()
-  "It's annoying that we need re-indent line after we delete blank line with `awesome-pair-kill'.
-`paredt-kill+' fixed this problem.
+  "Intelligent soft kill.
 
-If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome-pair-kill' for smarter kill operation."
+When inside of code, kill forward S-expressions on the line, but respecting delimeters.
+When in a string, kill to the end of the string.
+When in comment, kill to the end of the line."
   (interactive)
   (cond ((derived-mode-p 'web-mode)
          (awesome-pair-web-mode-kill))
@@ -408,6 +409,19 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
          (awesome-pair-ruby-mode-kill))
         (t
          (awesome-pair-common-mode-kill))))
+
+(defun awesome-pair-backward-kill ()
+  "Intelligent soft kill.
+When inside of code, kill backward S-expressions on the line, but respecting delimiters.
+When in a string, kill to the beginning of the string.
+When in comment, kill to the beginning of the line."
+  (interactive)
+  (cond ((derived-mode-p 'web-mode)
+         (awesome-pair-web-mode-backward-kill))
+        ((derived-mode-p 'ruby-mode)
+         (awesome-pair-ruby-mode-backward-kill))
+        (t
+         (awesome-pair-common-mode-backward-kill))))
 
 (defun awesome-pair-wrap-round ()
   (interactive)
@@ -880,12 +894,36 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
          (kill-line))
         (t (awesome-pair-kill-sexps-on-line))))
 
+(defun awesome-pair-backward-kill-internal ()
+  (cond (current-prefix-arg
+         (kill-line (if (integerp current-prefix-arg)
+                        current-prefix-arg
+                      1)))
+        ((awesome-pair-in-string-p)
+         (awesome-pair-kill-line-backward-in-string))
+        ((awesome-pair-in-single-quote-string-p)
+         (awesome-pair-kill-line-backward-in-single-quote-string))
+        ((or (awesome-pair-in-comment-p)
+             (save-excursion
+               (awesome-pair-skip-whitespace nil (point-at-bol))
+               (bolp)))
+         (if (bolp) (awesome-pair-backward-delete)
+           (kill-line 0)))
+        (t (awesome-pair-kill-sexps-backward-on-line))))
+
 (defun awesome-pair-kill-line-in-single-quote-string ()
   (let ((sexp-end (save-excursion
                     (forward-sexp)
                     (backward-char)
                     (point))))
     (kill-region (point) sexp-end)))
+
+(defun awesome-pair-kill-line-backward-in-single-quote-string ()
+  (let ((sexp-beg (save-excursion
+                    (backward-sexp)
+                    (forward-char)
+                    (point))))
+    (kill-region sexp-beg (point))))
 
 (defun awesome-pair-kill-line-in-string ()
   (cond ((save-excursion
@@ -902,6 +940,23 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
                       (awesome-pair-in-string-p))
                (forward-char))
              (kill-region beginning (point)))
+           ))))
+
+(defun awesome-pair-kill-line-backward-in-string ()
+  (cond ((save-excursion
+           (awesome-pair-skip-whitespace nil (point-at-bol))
+           (bolp))
+         (kill-line))
+        (t
+         (save-excursion
+           (if (awesome-pair-in-string-escape-p)
+               (forward-char))
+           (let ((beginning (point)))
+             (while (save-excursion
+                      (backward-char)
+                      (awesome-pair-in-string-p))
+               (backward-char))
+             (kill-region (point) beginning))
            ))))
 
 (defun awesome-pair-skip-whitespace (trailing-p &optional limit)
@@ -923,6 +978,21 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
                               (eq (point-at-eol) eol))
                          eol
                        (point)))))))
+
+(defun awesome-pair-kill-sexps-backward-on-line ()
+  (if (awesome-pair-in-char-p)
+      (forward-char 1))
+  (let ((beginning (point))
+        (bol (point-at-bol)))
+    (let ((beg-of-list-p (awesome-pair-backward-sexps-to-kill beginning bol)))
+      (if beg-of-list-p (progn (up-list -1) (forward-char)))
+      (if kill-whole-line
+          (awesome-pair-kill-sexps-on-whole-line beginning)
+        (kill-region (if (and (not beg-of-list-p)
+                              (eq (point-at-bol) bol))
+                         bol
+                       (point))
+                     beginning)))))
 
 (defun awesome-pair-forward-sexps-to-kill (beginning eol)
   (let ((end-of-list-p nil)
@@ -950,6 +1020,32 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
         (setq firstp nil)))
     end-of-list-p))
 
+(defun awesome-pair-backward-sexps-to-kill (beginning bol)
+  (let ((beg-of-list-p nil)
+        (lastp t))
+    (catch 'return
+      (while t
+        (if (and kill-whole-line (bobp)) (throw 'return nil))
+        (save-excursion
+          (unless (awesome-pair-ignore-errors (backward-sexp))
+            (if (awesome-pair-ignore-errors (up-list -1))
+                (progn
+                  (setq beg-of-list-p (eq (point-at-bol) bol))
+                  (throw 'return nil))))
+          (if (or (and (not lastp)
+                       (not kill-whole-line)
+                       (bobp))
+                  (not (awesome-pair-ignore-errors (forward-sexp)))
+                  (not (eq (point-at-bol) bol)))
+              (throw 'return nil)))
+        (backward-sexp)
+        (if (and lastp
+                 (not kill-whole-line)
+                 (bobp))
+            (throw 'return nil))
+        (setq lastp nil)))
+    beg-of-list-p))
+
 (defun awesome-pair-kill-sexps-on-whole-line (beginning)
   (kill-region beginning
                (or (save-excursion
@@ -975,6 +1071,15 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
   (if (awesome-pair-is-blank-line-p)
       (awesome-pair-kill-blank-line-and-reindent)
     (awesome-pair-kill-internal)))
+
+(defun awesome-pair-common-mode-backward-kill ()
+  (if (awesome-pair-is-blank-line-p)
+      (awesome-pair-ignore-errors
+       (progn
+         (awesome-pair-kill-blank-line-and-reindent)
+         (forward-line -1)
+         (end-of-line)))
+    (awesome-pair-backward-kill-internal)))
 
 (defun awesome-pair-web-mode-kill ()
   "It's a smarter kill function for `web-mode'."
@@ -1053,11 +1158,15 @@ If current mode is `web-mode', use `awesome-pair-web-mode-kill' instead `awesome
         ;; Kill block if sexp parse failed.
         (web-mode-block-kill))))))
 
+
 (defun awesome-pair-in-element-p ()
   "Return non-nil if cursor in element area."
   (save-mark-and-excursion
     (web-mode-element-select)
     mark-active))
+
+(defun awesome-pair-web-mode-backward-kill ()
+  (message "Backward kill in web-mode is currently not implemented."))
 
 (defun awesome-pair-ruby-mode-kill ()
   "It's a smarter kill function for `ruby-mode'.
@@ -1070,6 +1179,35 @@ If current line is not blank, do `awesome-pair-kill' first, re-indent line if re
       (awesome-pair-kill-blank-line-and-reindent)
     ;; Do `awesome-pair-kill' first.
     (awesome-pair-kill-internal)
+
+    ;; Re-indent current line if line start with ruby keywords.
+    (when (let (in-beginning-block-p
+                in-end-block-p
+                current-symbol)
+            (save-excursion
+              (back-to-indentation)
+              (ignore-errors (setq current-symbol (buffer-substring-no-properties (beginning-of-thing 'symbol) (end-of-thing 'symbol))))
+              (setq in-beginning-block-p (member current-symbol '("class" "module" "else" "def" "if" "unless" "case" "while" "until" "for" "begin" "do")))
+              (setq in-end-block-p (member current-symbol '("end")))
+
+              (or in-beginning-block-p in-end-block-p)))
+      (indent-for-tab-command))))
+
+(defun awesome-pair-ruby-mode-backward-kill ()
+  "It's a smarter kill function for `ruby-mode'.
+
+If current line is blank line, re-indent line after kill whole line.
+
+If current line is not blank, do `awesome-pair-backward-kill' first, re-indent line if rest line start with ruby keywords.
+"
+  (if (awesome-pair-is-blank-line-p)
+      (awesome-pair-ignore-errors
+       (progn
+         (awesome-pair-kill-blank-line-and-reindent)
+         (forward-line -1)
+         (end-of-line)))
+    ;; Do `awesome-pair-kill' first.
+    (awesome-pair-backward-kill-internal)
 
     ;; Re-indent current line if line start with ruby keywords.
     (when (let (in-beginning-block-p
