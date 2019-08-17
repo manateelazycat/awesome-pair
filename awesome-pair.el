@@ -1475,6 +1475,11 @@ Just like `paredit-splice-sexp+' style."
                 (char-before))))
         (and (eq left-parent-char ?\{) (eq right-parent-char ?\}))))))
 
+;; Integrate with eldoc
+(with-eval-after-load 'eldoc
+  (eldoc-add-command-completions
+   "awesome-pair-"))
+
 (provide 'awesome-pair)
 
 ;;; awesome-pair.el ends here
