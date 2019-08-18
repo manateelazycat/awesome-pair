@@ -1350,7 +1350,7 @@ Just like `paredit-splice-sexp+' style."
         (cons start (1- (point)))))))
 
 (defun awesome-pair-after-open-pair-p ()
-  (when (not (bobp))
+  (unless (bobp)
     (save-excursion
       (let ((syn (char-syntax (char-before))))
         (or (eq syn ?\()
@@ -1359,7 +1359,7 @@ Just like `paredit-splice-sexp+' style."
         ))))
 
 (defun awesome-pair-after-close-pair-p ()
-  (when (not (bobp))
+  (unless (bobp)
     (save-excursion
       (let ((syn (char-syntax (char-before))))
         (or (eq syn ?\) )
@@ -1369,7 +1369,7 @@ Just like `paredit-splice-sexp+' style."
         ))))
 
 (defun awesome-pair-before-open-pair-p ()
-  (when (not (eobp))
+  (unless (eobp)
     (save-excursion
       (let ((syn (char-syntax (char-after))))
         (or (eq syn ?\( )
@@ -1379,7 +1379,7 @@ Just like `paredit-splice-sexp+' style."
         ))))
 
 (defun awesome-pair-before-close-pair-p ()
-  (when (not (eobp))
+  (unless (eobp)
     (save-excursion
       (let ((syn (char-syntax (char-after))))
         (or (eq syn ?\) )
