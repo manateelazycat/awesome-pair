@@ -1342,36 +1342,42 @@ Just like `paredit-splice-sexp+' style."
         (cons start (1- (point)))))))
 
 (defun awesome-pair-after-open-pair-p ()
-  (save-excursion
-    (let ((syn (char-syntax (char-before))))
-      (or (eq syn ?\()
-          (and (eq syn ?_)
-               (eq (char-before) ?\{)))
-      )))
+  (when (not (bobp))
+    (save-excursion
+      (let ((syn (char-syntax (char-before))))
+        (or (eq syn ?\()
+            (and (eq syn ?_)
+                 (eq (char-before) ?\{)))
+        ))))
 
 (defun awesome-pair-after-close-pair-p ()
-  (save-excursion
-    (let ((syn (char-syntax (char-before))))
-      (or (eq syn ?\) )
-          (eq syn ?\" )
-          (and (eq syn ?_ )
-               (eq (char-before) ?\}))
-          ))))
+  (when (not (bobp))
+    (save-excursion
+      (let ((syn (char-syntax (char-before))))
+        (or (eq syn ?\) )
+            (eq syn ?\" )
+            (and (eq syn ?_ )
+                 (eq (char-before) ?\})))
+        ))))
 
 (defun awesome-pair-before-open-pair-p ()
-  (save-excursion
-    (let ((syn (char-syntax (char-after))))
-      (or (eq syn ?\( )
-          (eq syn ?\" )
-          (and (eq syn ?_)
-               (eq (char-after) ?\{))))))
+  (when (not (eobp))
+    (save-excursion
+      (let ((syn (char-syntax (char-after))))
+        (or (eq syn ?\( )
+            (eq syn ?\" )
+            (and (eq syn ?_)
+                 (eq (char-after) ?\{)))
+        ))))
 
 (defun awesome-pair-before-close-pair-p ()
-  (save-excursion
-    (let ((syn (char-syntax (char-after))))
-      (or (eq syn ?\) )
-          (and (eq syn ?_)
-               (eq (char-after) ?\}))))))
+  (when (not (eobp))
+    (save-excursion
+      (let ((syn (char-syntax (char-after))))
+        (or (eq syn ?\) )
+            (and (eq syn ?_)
+                 (eq (char-after) ?\})))
+        ))))
 
 (defun awesome-pair-in-empty-pair-p ()
   (ignore-errors
