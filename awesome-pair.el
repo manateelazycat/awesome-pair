@@ -6,9 +6,9 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 2.7
+;; Version: 2.8
 
-;; Last-Updated: 2019-08-10 01:41:34
+;; Last-Updated: 2019-08-18 21:55:02
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -70,6 +70,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/08/18
+;;      * Don't kill rest string if cursor position at end tag before.
 ;;
 ;; 2019/08/10
 ;;      * Try to kill element if cursor in element area.
@@ -1148,9 +1151,14 @@ When in comment, kill to the beginning of the line."
       (kill-region (region-beginning) (region-end)))
      ;; Try to kill element if cursor in element area.
      ((awesome-pair-in-element-p)
-      (kill-region (point) (progn
-                             (web-mode-tag-match)
-                             (point))))
+      ;; Don't kill rest string if cursor position at end tag before.
+      (when (equal (point)
+                   (save-excursion
+                     (web-mode-tag-end)
+                     (point)))
+        (kill-region (point) (progn
+                               (web-mode-tag-match)
+                               (point)))))
      (t
       (unless (awesome-pair-ignore-errors
                ;; Kill all sexps in current line.
