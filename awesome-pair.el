@@ -191,14 +191,7 @@
   (interactive)
   (cond
    ((region-active-p)
-    (let ((start (region-beginning))
-          (end (region-end)))
-      (setq mark-active nil)
-      (goto-char start)
-      (insert "(")
-      (goto-char (+ end 1))
-      (insert ")")
-      (goto-char (+ start 1))))
+    (awesome-pair-wrap-region "(" ")"))
    ((and (awesome-pair-in-string-p)
          (derived-mode-p 'js-mode))
     (insert "()")
@@ -215,14 +208,7 @@
   (interactive)
   (cond
    ((region-active-p)
-    (let ((start (region-beginning))
-          (end (region-end)))
-      (setq mark-active nil)
-      (goto-char start)
-      (insert "{")
-      (goto-char (+ end 1))
-      (insert "}")
-      (goto-char (+ start 1))))
+    (awesome-pair-wrap-region "{" "}"))
    ((and (awesome-pair-in-string-p)
          (derived-mode-p 'js-mode))
     (insert "{}")
@@ -244,14 +230,7 @@
   (interactive)
   (cond
    ((region-active-p)
-    (let ((start (region-beginning))
-          (end (region-end)))
-      (setq mark-active nil)
-      (goto-char start)
-      (insert "[")
-      (goto-char (+ end 1))
-      (insert "]")
-      (goto-char (+ start 1))))
+    (awesome-pair-wrap-region "[" "]"))
    ((and (awesome-pair-in-string-p)
          (derived-mode-p 'js-mode))
     (insert "[]")
@@ -308,12 +287,19 @@
 (defun awesome-pair-double-quote ()
   (interactive)
   (cond ((awesome-pair-in-string-p)
-         (if (and (derived-mode-p 'go-mode)
-                  (equal (save-excursion (nth 3 (awesome-pair-current-parse-state))) 96))
-             ;; When current mode is golang.
-             ;; Don't insert \" in string that wrap by `...`
-             (insert "\"")
-           (insert "\\\"")))
+         (cond
+          ;; When current mode is golang.
+          ;; Don't insert \" in string that wrap by `...`
+          ((and (derived-mode-p 'go-mode)
+                (equal (save-excursion (nth 3 (awesome-pair-current-parse-state))) 96)
+                (if (region-active-p)
+                    (awesome-pair-wrap-region "\"" "\"")
+                  (insert "\""))))
+          (t (if (region-active-p)
+                 (awesome-pair-wrap-region "\\\"" "\\\"")
+               (insert "\\\"")))))
+        ((region-active-p)
+         (awesome-pair-wrap-region "\"" "\""))
         ((awesome-pair-in-comment-p)
          (insert "\""))
         (t
@@ -432,7 +418,7 @@ When in comment, kill to the beginning of the line."
    ;; If in *.Vue file
    ;; In template area, call `awesome-pair-web-mode-element-wrap'
    ;; Otherwise, call `awesome-pair-wrap-round-pair'
-   ((string-equal (file-name-extension (buffer-file-name)) "vue")
+   ((and (buffer-file-name) (string-equal (file-name-extension (buffer-file-name)) "vue"))
     (if (awesome-pair-vue-in-template-area)
         (awesome-pair-web-mode-element-wrap)
       (awesome-pair-wrap-round-pair)))
@@ -446,38 +432,17 @@ When in comment, kill to the beginning of the line."
 
 (defun awesome-pair-wrap-round-pair ()
   (cond ((region-active-p)
-         (let ((start (region-beginning))
-               (end (region-end)))
-           (setq mark-active nil)
-           (goto-char start)
-           (insert "(")
-           (goto-char (+ end 1))
-           (insert ")")
-           (goto-char start)))
+         (awesome-pair-wrap-region "(" ")"))
         ((awesome-pair-in-string-p)
          (let ((string-bound (awesome-pair-string-start+end-points)))
-           (save-excursion
-             (goto-char (car string-bound))
-             (insert "(")
-             (goto-char (+ (cdr string-bound) 2))
-             (insert ")"))))
+           (awesome-pair-wrap (car string-bound) (1+ (cdr string-bound))
+                              "(" ")")))
         ((awesome-pair-in-comment-p)
-         (save-excursion
-           (let ((start (beginning-of-thing 'symbol))
-                 (end (end-of-thing 'symbol)))
-             (goto-char start)
-             (insert "(")
-             (goto-char (+ end 1))
-             (insert ")"))))
+         (awesome-pair-wrap (beginning-of-thing 'symbol) (end-of-thing 'symbol)
+                            "(" ")"))
         (t
-         (save-excursion
-           (let ((start (beginning-of-thing 'sexp))
-                 (end (end-of-thing 'sexp)))
-             (goto-char start)
-             (insert "(")
-             (goto-char (+ end 1))
-             (insert ")"))
-           )))
+         (awesome-pair-wrap (beginning-of-thing 'sexp) (end-of-thing 'sexp)
+                            "(" ")")))
   ;; Forward to jump in parenthesis.
   (forward-char)
   ;; Indent wrap area.
@@ -485,40 +450,18 @@ When in comment, kill to the beginning of the line."
 
 (defun awesome-pair-wrap-bracket ()
   (interactive)
-  (cond
-   ((region-active-p)
-    (let ((start (region-beginning))
-          (end (region-end)))
-      (setq mark-active nil)
-      (goto-char start)
-      (insert "[")
-      (goto-char (+ end 1))
-      (insert "]")
-      (goto-char start)))
-   ((awesome-pair-in-string-p)
-    (let ((string-bound (awesome-pair-string-start+end-points)))
-      (save-excursion
-        (goto-char (car string-bound))
-        (insert "[")
-        (goto-char (+ (cdr string-bound) 2))
-        (insert "]"))))
-   ((awesome-pair-in-comment-p)
-    (save-excursion
-      (let ((start (beginning-of-thing 'symbol))
-            (end (end-of-thing 'symbol)))
-        (goto-char start)
-        (insert "[")
-        (goto-char (+ end 1))
-        (insert "]"))))
-   (t
-    (save-excursion
-      (let ((start (beginning-of-thing 'sexp))
-            (end (end-of-thing 'sexp)))
-        (goto-char start)
-        (insert "[")
-        (goto-char (+ end 1))
-        (insert "]"))
-      )))
+  (cond ((region-active-p)
+         (awesome-pair-wrap-region "[" "]"))
+        ((awesome-pair-in-string-p)
+         (let ((string-bound (awesome-pair-string-start+end-points)))
+           (awesome-pair-wrap (car string-bound) (1+ (cdr string-bound))
+                              "[" "]")))
+        ((awesome-pair-in-comment-p)
+         (awesome-pair-wrap (beginning-of-thing 'symbol) (end-of-thing 'symbol)
+                            "[" "]"))
+        (t
+         (awesome-pair-wrap (beginning-of-thing 'sexp) (end-of-thing 'sexp)
+                            "[" "]")))
   ;; Forward to jump in parenthesis.
   (forward-char)
   ;; Indent wrap area.
@@ -526,40 +469,18 @@ When in comment, kill to the beginning of the line."
 
 (defun awesome-pair-wrap-curly ()
   (interactive)
-  (cond
-   ((region-active-p)
-    (let ((start (region-beginning))
-          (end (region-end)))
-      (setq mark-active nil)
-      (goto-char start)
-      (insert "{")
-      (goto-char (+ end 1))
-      (insert "}")
-      (goto-char start)))
-   ((awesome-pair-in-string-p)
-    (let ((string-bound (awesome-pair-string-start+end-points)))
-      (save-excursion
-        (goto-char (car string-bound))
-        (insert "{")
-        (goto-char (+ (cdr string-bound) 2))
-        (insert "}"))))
-   ((awesome-pair-in-comment-p)
-    (save-excursion
-      (let ((start (beginning-of-thing 'symbol))
-            (end (end-of-thing 'symbol)))
-        (goto-char start)
-        (insert "{")
-        (goto-char (+ end 1))
-        (insert "}"))))
-   (t
-    (save-excursion
-      (let ((start (beginning-of-thing 'sexp))
-            (end (end-of-thing 'sexp)))
-        (goto-char start)
-        (insert "{")
-        (goto-char (+ end 1))
-        (insert "}"))
-      )))
+  (cond ((region-active-p)
+         (awesome-pair-wrap-region "{" "}"))
+        ((awesome-pair-in-string-p)
+         (let ((string-bound (awesome-pair-string-start+end-points)))
+           (awesome-pair-wrap (car string-bound) (1+ (cdr string-bound))
+                              "{" "}")))
+        ((awesome-pair-in-comment-p)
+         (awesome-pair-wrap (beginning-of-thing 'symbol) (end-of-thing 'symbol)
+                            "{" "}"))
+        (t
+         (awesome-pair-wrap (beginning-of-thing 'sexp) (end-of-thing 'sexp)
+                            "{" "}")))
   ;; Forward to jump in parenthesis.
   (forward-char)
   ;; Indent wrap area.
@@ -567,34 +488,16 @@ When in comment, kill to the beginning of the line."
 
 (defun awesome-pair-wrap-double-quote ()
   (interactive)
-  (cond
-   ((region-active-p)
-    (let ((start (region-beginning))
-          (end (region-end)))
-      (setq mark-active nil)
-      (goto-char start)
-      (insert "\"")
-      (goto-char (+ end 1))
-      (insert "\"")
-      (goto-char start)))
-   ((awesome-pair-in-string-p)
-    (goto-char (1+ (cdr (awesome-pair-string-start+end-points)))))
-   ((awesome-pair-in-comment-p)
-    (save-excursion
-      (let ((start (beginning-of-thing 'symbol))
-            (end (end-of-thing 'symbol)))
-        (goto-char start)
-        (insert "\"")
-        (goto-char (+ end 1))
-        (insert "\""))))
-   (t
-    (save-excursion
-      (let ((start (beginning-of-thing 'sexp))
-            (end (end-of-thing 'sexp)))
-        (goto-char start)
-        (insert "\"")
-        (goto-char (+ end 1))
-        (insert "\"")))))
+  (cond ((region-active-p)
+         (awesome-pair-wrap-region "\"" "\""))
+        ((awesome-pair-in-string-p)
+         (goto-char (1+ (cdr (awesome-pair-string-start+end-points)))))
+        ((awesome-pair-in-comment-p)
+         (awesome-pair-wrap (beginning-of-thing 'symbol) (end-of-thing 'symbol)
+                            "\"" "\""))
+        (t
+         (awesome-pair-wrap (beginning-of-thing 'sexp) (end-of-thing 'sexp)
+                            "\"" "\"")))
   ;; Forward to jump in parenthesis.
   (forward-char)
   ;; Indent wrap area.
@@ -1336,6 +1239,32 @@ Just like `paredit-splice-sexp+' style."
     ))
 
 ;;;;;;;;;;;;;;;;; Utils functions ;;;;;;;;;;;;;;;;;;;;;;
+
+(defun awesome-pair-wrap (beg end a b)
+  "Insert A at position BEG, and B after END. Save previous point position.
+
+A and B are strings."
+  (save-excursion
+    (goto-char beg)
+    (insert a)
+    (goto-char (1+ end))
+    (insert b))
+  )
+
+(defun awesome-pair-wrap-region (a b)
+  "When a region is active, insert A and B around it, and jump after A.
+
+A and B are strings."
+  (when (region-active-p)
+    (let ((start (region-beginning))
+          (end (region-end)))
+      (setq mark-active nil)
+      (goto-char start)
+      (insert a)
+      (goto-char (1+ end))
+      (insert b)
+      (goto-char (+ (length a) start)))))
+
 (defun awesome-pair-current-parse-state ()
   (let ((point (point)))
     (beginning-of-defun)
@@ -1418,7 +1347,8 @@ Just like `paredit-splice-sexp+' style."
              (string-equal last-char "'"))))))
 
 (defun awesome-pair-in-string-p (&optional state)
-  (save-excursion
+  (unless (or (bobp) (eobp))
+      (save-excursion
     (or
      ;; In most situation, point inside a string when 4rd state `parse-partial-sexp' is non-nil.
      ;; but at this time, if the string delimiter is the last character of the line, the point is not in the string.
@@ -1432,7 +1362,7 @@ Just like `paredit-splice-sexp+' style."
      (and
       (eq (get-text-property (point) 'face) 'font-lock-doc-face)
       (eq (get-text-property (- (point) 1) 'face) 'font-lock-doc-face))
-     )))
+     ))))
 
 (defun awesome-pair-in-comment-p (&optional state)
   (save-excursion
