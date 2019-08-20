@@ -6,9 +6,9 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 2.8
+;; Version: 2.9
 
-;; Last-Updated: 2019-08-18 21:55:02
+;; Last-Updated: 2019-08-20 20:20:34
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -70,6 +70,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/08/20
+;;      * Fix #23 "Unbalanced parentheses" error
 ;;
 ;; 2019/08/18
 ;;      * Don't kill rest string if cursor position at end tag before.
@@ -443,10 +446,10 @@ When in comment, kill to the beginning of the line."
         (t
          (awesome-pair-wrap (beginning-of-thing 'sexp) (end-of-thing 'sexp)
                             "(" ")")))
-  ;; Forward to jump in parenthesis.
-  (forward-char)
   ;; Indent wrap area.
-  (awesome-pair-indent-parenthesis-area))
+  (awesome-pair-indent-parenthesis-area)
+  ;; Forward to jump in parenthesis.
+  (forward-char))
 
 (defun awesome-pair-wrap-bracket ()
   (interactive)
@@ -462,10 +465,10 @@ When in comment, kill to the beginning of the line."
         (t
          (awesome-pair-wrap (beginning-of-thing 'sexp) (end-of-thing 'sexp)
                             "[" "]")))
-  ;; Forward to jump in parenthesis.
-  (forward-char)
   ;; Indent wrap area.
-  (awesome-pair-indent-parenthesis-area))
+  (awesome-pair-indent-parenthesis-area)
+  ;; Forward to jump in parenthesis.
+  (forward-char))
 
 (defun awesome-pair-wrap-curly ()
   (interactive)
@@ -481,10 +484,10 @@ When in comment, kill to the beginning of the line."
         (t
          (awesome-pair-wrap (beginning-of-thing 'sexp) (end-of-thing 'sexp)
                             "{" "}")))
-  ;; Forward to jump in parenthesis.
-  (forward-char)
   ;; Indent wrap area.
-  (awesome-pair-indent-parenthesis-area))
+  (awesome-pair-indent-parenthesis-area)
+  ;; Forward to jump in parenthesis.
+  (forward-char))
 
 (defun awesome-pair-wrap-double-quote ()
   (interactive)
@@ -498,10 +501,10 @@ When in comment, kill to the beginning of the line."
         (t
          (awesome-pair-wrap (beginning-of-thing 'sexp) (end-of-thing 'sexp)
                             "\"" "\"")))
-  ;; Forward to jump in parenthesis.
-  (forward-char)
   ;; Indent wrap area.
-  (awesome-pair-indent-parenthesis-area))
+  (awesome-pair-indent-parenthesis-area)
+  ;; Forward to jump in parenthesis.
+  (forward-char))
 
 (defun awesome-pair-unwrap (&optional argument)
   (interactive "P")
@@ -1348,21 +1351,21 @@ A and B are strings."
 
 (defun awesome-pair-in-string-p (&optional state)
   (unless (or (bobp) (eobp))
-      (save-excursion
-    (or
-     ;; In most situation, point inside a string when 4rd state `parse-partial-sexp' is non-nil.
-     ;; but at this time, if the string delimiter is the last character of the line, the point is not in the string.
-     ;; So we need exclude this situation when check state of `parse-partial-sexp'.
-     (and
-      (nth 3 (or state (awesome-pair-current-parse-state)))
-      (not (equal (point) (line-end-position))))
-     (and
-      (eq (get-text-property (point) 'face) 'font-lock-string-face)
-      (eq (get-text-property (- (point) 1) 'face) 'font-lock-string-face))
-     (and
-      (eq (get-text-property (point) 'face) 'font-lock-doc-face)
-      (eq (get-text-property (- (point) 1) 'face) 'font-lock-doc-face))
-     ))))
+    (save-excursion
+      (or
+       ;; In most situation, point inside a string when 4rd state `parse-partial-sexp' is non-nil.
+       ;; but at this time, if the string delimiter is the last character of the line, the point is not in the string.
+       ;; So we need exclude this situation when check state of `parse-partial-sexp'.
+       (and
+        (nth 3 (or state (awesome-pair-current-parse-state)))
+        (not (equal (point) (line-end-position))))
+       (and
+        (eq (get-text-property (point) 'face) 'font-lock-string-face)
+        (eq (get-text-property (- (point) 1) 'face) 'font-lock-string-face))
+       (and
+        (eq (get-text-property (point) 'face) 'font-lock-doc-face)
+        (eq (get-text-property (- (point) 1) 'face) 'font-lock-doc-face))
+       ))))
 
 (defun awesome-pair-in-comment-p (&optional state)
   (save-excursion
