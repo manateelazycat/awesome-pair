@@ -194,7 +194,7 @@
   (interactive)
   (cond
    ((region-active-p)
-    (awesome-pair-wrap-region "(" ")"))
+    (awesome-pair-wrap-round))
    ((and (awesome-pair-in-string-p)
          (derived-mode-p 'js-mode))
     (insert "()")
@@ -211,7 +211,7 @@
   (interactive)
   (cond
    ((region-active-p)
-    (awesome-pair-wrap-region "{" "}"))
+    (awesome-pair-wrap-curly))
    ((and (awesome-pair-in-string-p)
          (derived-mode-p 'js-mode))
     (insert "{}")
@@ -233,7 +233,7 @@
   (interactive)
   (cond
    ((region-active-p)
-    (awesome-pair-wrap-region "[" "]"))
+    (awesome-pair-wrap-bracket))
    ((and (awesome-pair-in-string-p)
          (derived-mode-p 'js-mode))
     (insert "[]")
@@ -289,20 +289,17 @@
 
 (defun awesome-pair-double-quote ()
   (interactive)
-  (cond ((awesome-pair-in-string-p)
+  (cond ((region-active-p)
+         (awesome-pair-wrap-double-quote))
+        ((awesome-pair-in-string-p)
          (cond
           ;; When current mode is golang.
           ;; Don't insert \" in string that wrap by `...`
           ((and (derived-mode-p 'go-mode)
-                (equal (save-excursion (nth 3 (awesome-pair-current-parse-state))) 96)
-                (if (region-active-p)
-                    (awesome-pair-wrap-region "\"" "\"")
-                  (insert "\""))))
-          (t (if (region-active-p)
-                 (awesome-pair-wrap-region "\\\"" "\\\"")
-               (insert "\\\"")))))
-        ((region-active-p)
-         (awesome-pair-wrap-region "\"" "\""))
+                (equal (save-excursion (nth 3 (awesome-pair-current-parse-state))) 96))
+           (insert "\""))
+          (t
+           (insert "\\\""))))
         ((awesome-pair-in-comment-p)
          (insert "\""))
         (t
@@ -499,7 +496,14 @@ When in comment, kill to the beginning of the line."
 
 (defun awesome-pair-wrap-double-quote ()
   (interactive)
-  (cond ((region-active-p)
+  (cond ((and (region-active-p)
+              (awesome-pair-in-string-p))
+         (cond ((and (derived-mode-p 'go-mode)
+                     (equal (save-excursion (nth 3 (awesome-pair-current-parse-state))) 96))
+                (awesome-pair-wrap-region "\"" "\""))
+               (t
+                (awesome-pair-wrap-region "\\\"" "\\\""))))
+        ((region-active-p)
          (awesome-pair-wrap-region "\"" "\""))
         ((awesome-pair-in-string-p)
          (goto-char (1+ (cdr (awesome-pair-string-start+end-points)))))
