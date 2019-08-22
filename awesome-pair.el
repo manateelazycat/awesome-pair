@@ -293,6 +293,10 @@
          (awesome-pair-wrap-double-quote))
         ((awesome-pair-in-string-p)
          (cond
+          ((and (derived-mode-p 'python-mode)
+                (and (eq (char-before) ?\") (eq (char-after) ?\")))
+           (insert "\"\"")
+           (backward-char))
           ;; When current mode is golang.
           ;; Don't insert \" in string that wrap by `...`
           ((and (derived-mode-p 'go-mode)
