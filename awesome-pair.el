@@ -6,9 +6,9 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 2.9
+;; Version: 3.0
 
-;; Last-Updated: 2019-08-20 20:20:34
+;; Last-Updated: 2019-08-23 09:12:12
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -70,6 +70,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2019/08/23
+;;      * Fix #28 "Unbalanced parentheses" error.
 ;;
 ;; 2019/08/20
 ;;      * Fix #23 "Unbalanced parentheses" error
@@ -372,7 +375,7 @@ output: [ | ]
          (if (and (derived-mode-p 'sh-mode)
                   (eq ?\) (char-before)))
              (delete-char -1)
-         (awesome-pair-backward-movein-or-delete-close-pair)))
+           (awesome-pair-backward-movein-or-delete-close-pair)))
         ((awesome-pair-in-empty-pair-p)
          (awesome-pair-backward-delete-in-pair))
         ((not (awesome-pair-after-open-pair-p))
@@ -493,8 +496,6 @@ When in comment, kill to the beginning of the line."
         (t
          (awesome-pair-wrap (beginning-of-thing 'sexp) (end-of-thing 'sexp)
                             "{" "}")))
-  ;; Indent wrap area.
-  (awesome-pair-indent-parenthesis-area)
   ;; Forward to jump in parenthesis.
   (forward-char))
 
@@ -517,8 +518,6 @@ When in comment, kill to the beginning of the line."
         (t
          (awesome-pair-wrap (beginning-of-thing 'sexp) (end-of-thing 'sexp)
                             "\"" "\"")))
-  ;; Indent wrap area.
-  (awesome-pair-indent-parenthesis-area)
   ;; Forward to jump in parenthesis.
   (forward-char))
 
