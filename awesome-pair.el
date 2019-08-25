@@ -6,9 +6,9 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 3.1
+;; Version: 3.2
 
-;; Last-Updated: 2019-08-25 12:45:03
+;; Last-Updated: 2019-08-25 13:17:49
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -464,7 +464,10 @@ When in comment, kill to the beginning of the line."
   ;; Indent wrap area.
   (awesome-pair-indent-parenthesis-area)
   ;; Jump to internal parenthesis start position.
-  (awesome-pair-match-paren 1))
+  (up-list)
+  (awesome-pair-match-paren 1)
+  (forward-char)
+  )
 
 (defun awesome-pair-wrap-bracket ()
   (interactive)
@@ -483,7 +486,9 @@ When in comment, kill to the beginning of the line."
   ;; Indent wrap area.
   (awesome-pair-indent-parenthesis-area)
   ;; Jump to internal parenthesis start position.
-  (awesome-pair-match-paren 1))
+  (up-list)
+  (awesome-pair-match-paren 1)
+  (forward-char))
 
 (defun awesome-pair-wrap-curly ()
   (interactive)
