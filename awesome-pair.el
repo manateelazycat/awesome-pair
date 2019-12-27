@@ -347,9 +347,8 @@ output: [ | ]
 (defun awesome-pair-match-paren (arg)
   "Go to the matching parenthesis if on parenthesis, otherwise insert %."
   (interactive "p")
-  (cond ((ignore-errors
-           (or (awesome-pair-in-comment-p)
-               (awesome-pair-in-string-p)))
+  (cond ((or (awesome-pair-in-comment-p)
+             (awesome-pair-in-string-p))
          (self-insert-command (or arg 1)))
         ((looking-at "\\s\(\\|\\s\{\\|\\s\[")
          (forward-list))
@@ -1022,11 +1021,11 @@ When in comment, kill to the beginning of the line."
   (if (awesome-pair-is-blank-line-p)
       (awesome-pair-kill-blank-line-and-reindent)
     (cond
-;; Kill all content wrap by <% ... %> when right is <%
+     ;; Kill all content wrap by <% ... %> when right is <%
      ((and (looking-at "<%")
            (save-excursion (search-forward-regexp "%>" nil t)))
       (kill-region (point) (search-forward-regexp "%>" nil t)))
-;; Kill content in <% ... %> if left is <% or <%=
+     ;; Kill content in <% ... %> if left is <% or <%=
      ((and (looking-back "<%=?\\s-?")
            (save-excursion (search-forward-regexp "%>" nil t)))
       (let ((start (point))
@@ -1036,39 +1035,39 @@ When in comment, kill to the beginning of the line."
                    (point)
                    )))
         (kill-region start end)))
-;; Kill string if current pointer in string area.
+     ;; Kill string if current pointer in string area.
      ((awesome-pair-in-string-p)
       (awesome-pair-kill-internal))
-;; Kill string in single quote.
+     ;; Kill string in single quote.
      ((awesome-pair-in-single-quote-string-p)
       (awesome-pair-kill-line-in-single-quote-string))
-;; Kill element if no attributes in tag.
+     ;; Kill element if no attributes in tag.
      ((and
        (looking-at "\\s-?+</")
        (looking-back "<[a-z]+\\s-?>\\s-?+"))
       (web-mode-element-kill 1))
-;; Kill whitespace in tag.
+     ;; Kill whitespace in tag.
      ((looking-at "\\s-+>")
       (search-forward-regexp ">" nil t)
       (backward-char)
       (awesome-pair-delete-whitespace-before-cursor))
-;; Jump in content if point in start tag.
+     ;; Jump in content if point in start tag.
      ((and (looking-at ">")
            (looking-back "<[a-z]+"))
       (forward-char 1))
-;; Kill tag if in end tag.
+     ;; Kill tag if in end tag.
      ((and (looking-at ">")
            (looking-back "</[a-z]+"))
       (beginning-of-thing 'sexp)
       (web-mode-element-kill 1))
-;; Kill attributes if point in attributes area.
+     ;; Kill attributes if point in attributes area.
      ((and
        (web-mode-attribute-beginning-position)
        (web-mode-attribute-end-position)
        (>= (point) (web-mode-attribute-beginning-position))
        (<= (point) (web-mode-attribute-end-position)))
       (web-mode-attribute-kill))
-;; Kill attributes if only space between point and attributes start.
+     ;; Kill attributes if only space between point and attributes start.
      ((and
        (looking-at "\\s-+")
        (save-excursion
@@ -1076,15 +1075,15 @@ When in comment, kill to the beginning of the line."
          (equal (point) (web-mode-attribute-beginning-position))))
       (search-forward-regexp "\\s-+")
       (web-mode-attribute-kill))
-;; Kill line if rest chars is whitespace.
+     ;; Kill line if rest chars is whitespace.
      ((looking-at "\\s-?+\n")
       (kill-line))
-;; Kill region if mark is active.
+     ;; Kill region if mark is active.
      (mark-active
       (kill-region (region-beginning) (region-end)))
-;; Try to kill element if cursor in attribute area.
+     ;; Try to kill element if cursor in attribute area.
      ((awesome-pair-in-attribute-p)
-;; Don't kill rest string if cursor position at end tag before.
+      ;; Don't kill rest string if cursor position at end tag before.
       (when (equal (point)
                    (save-excursion
                      (web-mode-tag-end)
@@ -1378,29 +1377,31 @@ A and B are strings."
              (string-equal last-char "'"))))))
 
 (defun awesome-pair-in-string-p (&optional state)
-  (unless (or (bobp) (eobp))
-    (save-excursion
-      (or
-       ;; In most situation, point inside a string when 4rd state `parse-partial-sexp' is non-nil.
-       ;; but at this time, if the string delimiter is the last character of the line, the point is not in the string.
-       ;; So we need exclude this situation when check state of `parse-partial-sexp'.
-       (and
-        (nth 3 (or state (awesome-pair-current-parse-state)))
-        (not (equal (point) (line-end-position))))
-       (and
-        (eq (get-text-property (point) 'face) 'font-lock-string-face)
-        (eq (get-text-property (- (point) 1) 'face) 'font-lock-string-face))
-       (and
-        (eq (get-text-property (point) 'face) 'font-lock-doc-face)
-        (eq (get-text-property (- (point) 1) 'face) 'font-lock-doc-face))
-       ))))
+  (ignore-errors
+    (unless (or (bobp) (eobp))
+      (save-excursion
+        (or
+         ;; In most situation, point inside a string when 4rd state `parse-partial-sexp' is non-nil.
+         ;; but at this time, if the string delimiter is the last character of the line, the point is not in the string.
+         ;; So we need exclude this situation when check state of `parse-partial-sexp'.
+         (and
+          (nth 3 (or state (awesome-pair-current-parse-state)))
+          (not (equal (point) (line-end-position))))
+         (and
+          (eq (get-text-property (point) 'face) 'font-lock-string-face)
+          (eq (get-text-property (- (point) 1) 'face) 'font-lock-string-face))
+         (and
+          (eq (get-text-property (point) 'face) 'font-lock-doc-face)
+          (eq (get-text-property (- (point) 1) 'face) 'font-lock-doc-face))
+         )))))
 
 (defun awesome-pair-in-comment-p (&optional state)
-  (save-excursion
-    (or (nth 4 (or state (awesome-pair-current-parse-state)))
-        (eq (get-text-property (point) 'face) 'font-lock-comment-face)
-        (and (featurep 'web-mode)
-             (eq (get-text-property (point) 'face) 'web-mode-comment-face)))))
+  (ignore-errors
+    (save-excursion
+      (or (nth 4 (or state (awesome-pair-current-parse-state)))
+          (eq (get-text-property (point) 'face) 'font-lock-comment-face)
+          (and (featurep 'web-mode)
+               (eq (get-text-property (point) 'face) 'web-mode-comment-face))))))
 
 (defun awesome-pair-in-string-escape-p ()
   (let ((oddp nil))
