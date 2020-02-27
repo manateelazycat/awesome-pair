@@ -6,9 +6,9 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2018, Andy Stewart, all rights reserved.
 ;; Created: 2018-11-11 09:27:58
-;; Version: 3.3
+;; Version: 3.4
 
-;; Last-Updated: 2019-12-23 22:05:49
+;; Last-Updated: 2020-02-27 13:29:54
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/awesome-pair.el
 ;; Keywords:
@@ -70,6 +70,9 @@
 ;;
 
 ;;; Change log:
+;;
+;; 2020/02/27
+;;      * Make `awesome-pair-wrap-round' and `awesome-pair-equal' works with script area of html file.
 ;;
 ;; 2019/12/23
 ;;      * Re-implement `awesome-pair-in-attribute-p' and fix bug of kill line in web-mode.
@@ -445,7 +448,9 @@ When in comment, kill to the beginning of the line."
       (awesome-pair-wrap-round-pair)))
    ;; If is `web-mode' but not in *.Vue file, call `awesome-pair-web-mode-element-wrap'
    ((derived-mode-p 'web-mode)
-    (awesome-pair-web-mode-element-wrap))
+    (if (awesome-pair-in-script-area)
+        (awesome-pair-wrap-round-pair)
+      (awesome-pair-web-mode-element-wrap)))
    ;; Otherwise call `awesome-pair-wrap-round-pair'
    (t
     (awesome-pair-wrap-round-pair))
@@ -1192,11 +1197,19 @@ If current line is not blank, do `awesome-pair-backward-kill' first, re-indent l
                  (insert "=\"\"")
                  (backward-char 1))
              (insert "=")))
+          ((awesome-pair-in-script-area)
+           (insert "="))
           (t
            (insert "=\"\"")
            (backward-char 1))))
    (t
     (insert "="))))
+
+(defun awesome-pair-in-script-area ()
+  (and (save-excursion
+         (search-backward-regexp "<script" nil t))
+       (save-excursion
+         (search-forward-regexp "</script>" nil t))))
 
 (defun awesome-pair-vue-in-template-area ()
   (and (save-excursion
