@@ -1311,6 +1311,8 @@ A and B are strings."
 (defun awesome-pair-current-parse-state ()
   (let ((point (point)))
     (beginning-of-defun)
+    (when (equal point (point))
+      (beginning-of-line))
     (parse-partial-sexp (point) point)))
 
 (defun awesome-pair-string-start+end-points (&optional state)
