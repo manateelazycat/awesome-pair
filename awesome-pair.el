@@ -1030,6 +1030,18 @@ When in comment, kill to the beginning of the line."
      ((and (looking-at "<%")
            (save-excursion (search-forward-regexp "%>" nil t)))
       (kill-region (point) (search-forward-regexp "%>" nil t)))
+     ;; Kill content in {{ }} if left is {{.
+     ((and (looking-back "{{\\s-?")
+           (save-excursion (search-forward-regexp "\\s-?}}")))
+      (let ((start (save-excursion
+                     (search-backward-regexp "{{\\s-?" nil t)
+                     (forward-char 2)
+                     (point)))
+            (end (save-excursion
+                   (search-forward-regexp "\\s-?}}" nil t)
+                   (backward-char 2)
+                   (point))))
+        (kill-region start end)))
      ;; Kill content in <% ... %> if left is <% or <%=
      ((and (looking-back "<%=?\\s-?")
            (save-excursion (search-forward-regexp "%>" nil t)))
