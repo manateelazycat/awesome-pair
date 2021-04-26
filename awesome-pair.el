@@ -193,7 +193,7 @@
 (define-minor-mode awesome-pair-mode
   "Minor mode for auto parenthesis pairing with syntax table.
 \\<awesome-pair-mode-map>"
-  )
+  :group 'awesome-pair)
 
 (defmacro awesome-pair-ignore-errors (body)
   `(ignore-errors
