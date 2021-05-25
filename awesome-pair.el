@@ -190,6 +190,7 @@
 (defvar awesome-pair-mode-map (make-sparse-keymap)
   "Keymap for the awesome-pair minor mode.")
 
+;;;###autoload
 (define-minor-mode awesome-pair-mode
   "Minor mode for auto parenthesis pairing with syntax table.
 \\<awesome-pair-mode-map>"
