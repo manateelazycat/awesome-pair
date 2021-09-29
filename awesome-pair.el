@@ -1479,6 +1479,18 @@ A and B are strings."
                 (char-before))))
         (and (eq left-parent-char ?\{) (eq right-parent-char ?\}))))))
 
+(defun awesome-pair-newline (arg)
+  (interactive "p")
+  (cond ((or (awesome-pair-in-comment-p)
+             (awesome-pair-in-string-p))
+         (newline arg))
+        ((looking-back "(\s*\\|{\s*\\|\\[\s*")
+         (newline arg)
+         (open-line 1)
+         (indent-according-to-mode))
+        (t
+         (newline arg))))
+
 ;; Integrate with eldoc
 (with-eval-after-load 'eldoc
   (eldoc-add-command-completions
