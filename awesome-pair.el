@@ -1487,6 +1487,11 @@ A and B are strings."
         ((looking-back "(\s*\\|{\s*\\|\\[\s*")
          (newline arg)
          (open-line 1)
+         (save-excursion
+           (let ((inhibit-message t)
+                 (start (progn (awesome-pair-jump-left) (point)))
+                 (end (progn (awesome-pair-match-paren nil) (point))))
+             (indent-region start end)))
          (indent-according-to-mode))
         (t
          (newline arg))))
