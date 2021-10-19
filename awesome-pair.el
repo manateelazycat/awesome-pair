@@ -1496,13 +1496,10 @@ A and B are strings."
             (end (progn (awesome-pair-match-paren nil) (point))))
         (indent-region start end)))
     (indent-according-to-mode))
-   ;; Newline and indent if current mode not haskell or python.
-   ((not (member major-mode '(haskell-mode org-mode literate-haskell-mode)))
-    (newline arg)
-    (indent-according-to-mode))
-   ;; Otherwise, just simple newline.
+   ;; Newline and indent.
    (t
     (newline arg)
+    (indent-according-to-mode)
     )))
 
 ;; Integrate with eldoc
