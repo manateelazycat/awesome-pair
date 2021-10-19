@@ -1481,20 +1481,29 @@ A and B are strings."
 
 (defun awesome-pair-newline (arg)
   (interactive "p")
-  (cond ((or (awesome-pair-in-comment-p)
-             (awesome-pair-in-string-p))
-         (newline arg))
-        ((looking-back "(\s*\\|{\s*\\|\\[\s*")
-         (newline arg)
-         (open-line 1)
-         (save-excursion
-           (let ((inhibit-message t)
-                 (start (progn (awesome-pair-jump-left) (point)))
-                 (end (progn (awesome-pair-match-paren nil) (point))))
-             (indent-region start end)))
-         (indent-according-to-mode))
-        (t
-         (newline arg))))
+  (cond
+   ;; Just newline if in string or comment.
+   ((or (awesome-pair-in-comment-p)
+        (awesome-pair-in-string-p))
+    (newline arg))
+   ;; Newline and indent region if cursor in parentheses.
+   ((looking-back "(\s*\\|{\s*\\|\\[\s*")
+    (newline arg)
+    (open-line 1)
+    (save-excursion
+      (let ((inhibit-message t)
+            (start (progn (awesome-pair-jump-left) (point)))
+            (end (progn (awesome-pair-match-paren nil) (point))))
+        (indent-region start end)))
+    (indent-according-to-mode))
+   ;; Newline and indent if current mode not haskell or python.
+   ((not (member major-mode '(haskell-mode org-mode literate-haskell-mode)))
+    (newline arg)
+    (indent-according-to-mode))
+   ;; Otherwise, just simple newline.
+   (t
+    (newline arg)
+    )))
 
 ;; Integrate with eldoc
 (with-eval-after-load 'eldoc
