@@ -1486,6 +1486,8 @@ A and B are strings."
    ((or (awesome-pair-in-comment-p)
         (awesome-pair-in-string-p))
     (newline arg))
+   ((derived-mode-p 'inferior-emacs-lisp-mode)
+    (ielm-return))
    ;; Newline and indent region if cursor in parentheses.
    ((looking-back "(\s*\\|{\s*\\|\\[\s*")
     (newline arg)
