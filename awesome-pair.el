@@ -1488,8 +1488,9 @@ A and B are strings."
     (newline arg))
    ((derived-mode-p 'inferior-emacs-lisp-mode)
     (ielm-return))
-   ;; Newline and indent region if cursor in parentheses.
-   ((looking-back "(\s*\\|{\s*\\|\\[\s*")
+   ;; Newline and indent region if cursor in parentheses and character is not blank after cursor.
+   ((and (looking-back "(\s*\\|{\s*\\|\\[\s*")
+         (looking-at-p "[[:space:]]*$"))
     (newline arg)
     (open-line 1)
     (save-excursion
